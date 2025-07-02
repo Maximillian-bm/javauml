@@ -10,12 +10,31 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
     "commands": [{
-      "command": "javauml.helloWorld",
-      "title": "Hello World"
-    }]
+      "command": "vscode-extension-app.saveSettings",
+      "title": "Save Settings"
+    },
+    {
+      "command": "vscode-extension-app.loadSettings",
+      "title": "Load Settings"
+    }],
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "javauml.settings.sourceFolder": {
+          "type": "string",
+          "default": "",
+          "description": "The source folder location for the project."
+        },
+        "javauml.settings.outputLocation": {
+          "type": "string",
+          "default": "",
+          "description": "The output location for writing files."
+        }
+      }
+    }
   },
   "scripts": {
     "lint": "eslint .",
