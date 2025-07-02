@@ -20,6 +20,13 @@
       "command": "vscode-extension-app.loadSettings",
       "title": "Load Settings"
     }],
+    "views": {
+      "explorer": [{
+        "id": "javaumlView",
+        "name": "JavaUML",
+        "type": "webview"
+      }]
+    },
     "configuration": {
       "type": "object",
       "properties": {
