@@ -174,10 +174,11 @@ function getClassesInFile(filePath) {
             if (classBody && classBody.children.classBodyDeclaration) {
                 const bodyDecls = classBody.children.classBodyDeclaration;
                 for (const bodyDecl of bodyDecls) {
-                    if (!bodyDecl.children) continue;
+                    if (!bodyDecl.children || !bodyDecl.children.classMemberDeclaration) continue;
+                    const memberDecl = bodyDecl.children.classMemberDeclaration[0];
                     // Fields
-                    if (bodyDecl.children.fieldDeclaration) {
-                        for (const fieldDecl of bodyDecl.children.fieldDeclaration) {
+                    if (memberDecl.children.fieldDeclaration) {
+                        for (const fieldDecl of memberDecl.children.fieldDeclaration) {
                             // Type
                             let type = 'Object';
                             if (fieldDecl.children.unannType && fieldDecl.children.unannType[0].children) {
@@ -199,8 +200,8 @@ function getClassesInFile(filePath) {
                         }
                     }
                     // Methods
-                    if (bodyDecl.children.methodDeclaration) {
-                        for (const methodDecl of bodyDecl.children.methodDeclaration) {
+                    if (memberDecl.children.methodDeclaration) {
+                        for (const methodDecl of memberDecl.children.methodDeclaration) {
                             const methodHeader = methodDecl.children.methodHeader[0];
                             const methodName = methodHeader.children.methodDeclarator[0].children.Identifier[0].image;
                             let returnType = 'void';
