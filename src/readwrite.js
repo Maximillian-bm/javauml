@@ -234,13 +234,22 @@ function getClassesInFile(filePath) {
                             if (methodHeader.children.result && methodHeader.children.result[0].children.unannType) {
                                 returnType = findTypeImage(methodHeader.children.result[0].children.unannType[0]) || 'void';
                             }
+                            // Check for private modifier
+                            let isPrivate = false;
+                            if (methodDecl.children.methodModifier) {
+                                for (const modifier of methodDecl.children.methodModifier) {
+                                    if (modifier.children && modifier.children.Private) {
+                                        isPrivate = true;
+                                        break;
+                                    }
+                                }
+                            }
                             // Parameters
                             let parameters = [];
                             if (methodHeader.children.methodDeclarator[0].children.formalParameterList) {
                                 const paramList = methodHeader.children.methodDeclarator[0].children.formalParameterList[0];
                                 if (paramList.children.formalParameters) {
                                     for (const param of paramList.children.formalParameters[0].children.formalParameter) {
-                                        const paramTypeNode = param.children.unannType[0].children;
                                         let paramType = findTypeImage(param.children.unannType[0]) || 'Object';
                                         const paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
                                         parameters.push({ name: paramName, type: paramType });
@@ -250,7 +259,7 @@ function getClassesInFile(filePath) {
                                     // Handle varargs (optional)
                                 }
                             }
-                            clazz.addMethod(new Method(methodName, returnType, parameters));
+                            clazz.addMethod(new Method(methodName, returnType, parameters, isPrivate));
                         }
                     }
                 }
