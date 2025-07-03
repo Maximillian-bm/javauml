@@ -241,10 +241,11 @@ function getClassesInFile(filePath) {
                             if (methodHeader.children.result && methodHeader.children.result[0].children.unannType) {
                                 returnType = findTypeImage(methodHeader.children.result[0].children.unannType[0]) || 'void';
                             }
-                            // Check for private modifier
+                            // Check for private modifier (robust)
                             let isPrivate = false;
                             if (methodDecl.children.methodModifier) {
                                 for (const modifier of methodDecl.children.methodModifier) {
+                                    // Each modifier may have multiple children (e.g., Private, Static, etc.)
                                     if (modifier.children && modifier.children.Private) {
                                         isPrivate = true;
                                         break;
