@@ -119,8 +119,12 @@ function getPackagesInPath(currentPath) {
         const stat = fs.statSync(fullPath);
         if (stat.isDirectory()) {
             const packageName = path.basename(fullPath);
+            // Collect classes in this directory
             const packageClasses = getClassesInPath(fullPath);
-            const packageObj = new Package(packageName, packageClasses);
+            // Recursively collect contained packages
+            const containedPackages = getPackagesInPath(fullPath);
+            // Create the package with its classes and contained packages
+            const packageObj = new Package(packageName, packageClasses, containedPackages);
             packages.push(packageObj);
         }
     }
