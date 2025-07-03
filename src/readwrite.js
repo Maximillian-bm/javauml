@@ -141,18 +141,41 @@ function getClassesInFile(filePath) {
         // If parse fails, skip this file
         return classes;
     }
-    // Find the root node
-    const root = cst.children.compilationUnit ? cst.children.compilationUnit[0] : cst;
+    // Find the root node (handle both CST shapes)
+    let root = cst;
+    if (root.name === 'compilationUnit' && root.children && root.children.ordinaryCompilationUnit) {
+        root = root.children.ordinaryCompilationUnit[0];
+    } else if (root.children && root.children.compilationUnit) {
+        root = root.children.compilationUnit[0];
+    }
     if (!root.children || !root.children.typeDeclaration) return classes;
     const typeDeclarations = root.children.typeDeclaration;
     for (const typeDecl of typeDeclarations) {
         if (!typeDecl.children || !typeDecl.children.classDeclaration) continue;
         for (const classDecl of typeDecl.children.classDeclaration) {
-            const name = classDecl.children.Identifier ? classDecl.children.Identifier[0].image : 'Unknown';
+            // Try to get class name from Identifier or normalClassDeclaration
+            let name = 'Unknown';
+            if (classDecl.children.Identifier) {
+                name = classDecl.children.Identifier[0].image;
+            } else if (classDecl.children.normalClassDeclaration) {
+                const ncd = classDecl.children.normalClassDeclaration[0];
+                if (ncd.children.Identifier) {
+                    name = ncd.children.Identifier[0].image;
+                }
+            } else {
+                // Debug: log available keys for troubleshooting
+                console.log('classDecl.children keys:', Object.keys(classDecl.children));
+            }
             const clazz = new Class(name, [], []);
             // Find classBody
-            if (classDecl.children.classBody && classDecl.children.classBody[0].children.classBodyDeclaration) {
-                const bodyDecls = classDecl.children.classBody[0].children.classBodyDeclaration;
+            let classBody = null;
+            if (classDecl.children.classBody) {
+                classBody = classDecl.children.classBody[0];
+            } else if (classDecl.children.normalClassDeclaration && classDecl.children.normalClassDeclaration[0].children.classBody) {
+                classBody = classDecl.children.normalClassDeclaration[0].children.classBody[0];
+            }
+            if (classBody && classBody.children.classBodyDeclaration) {
+                const bodyDecls = classBody.children.classBodyDeclaration;
                 for (const bodyDecl of bodyDecls) {
                     if (!bodyDecl.children) continue;
                     // Fields
