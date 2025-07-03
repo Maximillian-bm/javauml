@@ -6,6 +6,7 @@ class Project {
     constructor(packages, classes) {
         this.packages = packages || [];
         this.classes = classes || [];
+        this.listOfClassNames = [];
     }
     addPackage(pkg) {
         this.packages.push(pkg);
@@ -23,8 +24,29 @@ class Project {
         for (const clazz of this.classes) {
             clazz.toUML(uml, depth);
         }
+        for (const clazz of this.classes) {
+            this.addContainArrows(uml, clazz);
+        }
+        for (const pkg of this.packages) {
+            this.addContainArrowsFromPackages(uml, pkg);
+        }
         uml.push('@enduml');
         return uml;
+    }
+    addContainArrows(uml, clazz) {
+        for (const containes of clazz.containedClasses) {
+            if (this.listOfClassNames.includes(containes)) {
+                uml.push(`  ${clazz.name} o-- ${containes}: contains`);
+            }
+        }
+    }
+    addContainArrowsFromPackages(uml, pkg) {
+        for (const clazz of pkg.classes) {
+            this.addContainArrows(uml, clazz);
+        }
+        for (const subPackage of pkg.containedPackages) {
+            this.addContainArrowsFromPackages(uml, subPackage);
+        }
     }
 }
 
@@ -146,6 +168,7 @@ function readSourceFolder(sourceFolder) {
     for (const packageObj of project.packages) {
         addContainedClassOfPackages(listOfClassNames, packageObj);
     }
+    project.listOfClassNames = listOfClassNames;
     return project;
 }
 
