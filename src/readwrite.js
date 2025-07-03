@@ -131,6 +131,26 @@ function getPackagesInPath(currentPath) {
     return packages;
 }
 
+// Helper to recursively find the first .image property in a CST node
+function findTypeImage(node) {
+    if (!node) return null;
+    if (Array.isArray(node)) {
+        for (const n of node) {
+            const result = findTypeImage(n);
+            if (result) return result;
+        }
+    } else if (typeof node === 'object') {
+        if (node.image) return node.image;
+        if (node.children) {
+            for (const key of Object.keys(node.children)) {
+                const result = findTypeImage(node.children[key]);
+                if (result) return result;
+            }
+        }
+    }
+    return null;
+}
+
 function getClassesInFile(filePath) {
     const classes = [];
     const code = fs.readFileSync(filePath, 'utf8');
@@ -181,12 +201,17 @@ function getClassesInFile(filePath) {
                         for (const fieldDecl of memberDecl.children.fieldDeclaration) {
                             // Type
                             let type = 'Object';
-                            if (fieldDecl.children.unannType && fieldDecl.children.unannType[0].children) {
-                                const typeNode = fieldDecl.children.unannType[0].children;
-                                if (typeNode.unannClassOrInterfaceType) {
-                                    type = typeNode.unannClassOrInterfaceType[0].children.Identifier[0].image;
-                                } else if (typeNode.unannPrimitiveType) {
-                                    type = typeNode.unannPrimitiveType[0].image;
+                            if (fieldDecl.children.unannType && fieldDecl.children.unannType[0]) {
+                                type = findTypeImage(fieldDecl.children.unannType[0]) || 'Object';
+                            }
+                            // Check for private modifier
+                            let isPrivate = false;
+                            if (fieldDecl.children.fieldModifier) {
+                                for (const modifier of fieldDecl.children.fieldModifier) {
+                                    if (modifier.children && modifier.children.Private) {
+                                        isPrivate = true;
+                                        break;
+                                    }
                                 }
                             }
                             // Variable declarators
@@ -194,7 +219,7 @@ function getClassesInFile(filePath) {
                                 const varDecls = fieldDecl.children.variableDeclaratorList[0].children.variableDeclarator;
                                 for (const varDecl of varDecls) {
                                     const fieldName = varDecl.children.variableDeclaratorId[0].children.Identifier[0].image;
-                                    clazz.addField(new Field(fieldName, type));
+                                    clazz.addField(new Field(fieldName, type, isPrivate));
                                 }
                             }
                         }
@@ -204,14 +229,10 @@ function getClassesInFile(filePath) {
                         for (const methodDecl of memberDecl.children.methodDeclaration) {
                             const methodHeader = methodDecl.children.methodHeader[0];
                             const methodName = methodHeader.children.methodDeclarator[0].children.Identifier[0].image;
+                            // Return type
                             let returnType = 'void';
                             if (methodHeader.children.result && methodHeader.children.result[0].children.unannType) {
-                                const typeNode = methodHeader.children.result[0].children.unannType[0].children;
-                                if (typeNode.unannClassOrInterfaceType) {
-                                    returnType = typeNode.unannClassOrInterfaceType[0].children.Identifier[0].image;
-                                } else if (typeNode.unannPrimitiveType) {
-                                    returnType = typeNode.unannPrimitiveType[0].image;
-                                }
+                                returnType = findTypeImage(methodHeader.children.result[0].children.unannType[0]) || 'void';
                             }
                             // Parameters
                             let parameters = [];
@@ -220,12 +241,7 @@ function getClassesInFile(filePath) {
                                 if (paramList.children.formalParameters) {
                                     for (const param of paramList.children.formalParameters[0].children.formalParameter) {
                                         const paramTypeNode = param.children.unannType[0].children;
-                                        let paramType = 'Object';
-                                        if (paramTypeNode.unannClassOrInterfaceType) {
-                                            paramType = paramTypeNode.unannClassOrInterfaceType[0].children.Identifier[0].image;
-                                        } else if (paramTypeNode.unannPrimitiveType) {
-                                            paramType = paramTypeNode.unannPrimitiveType[0].image;
-                                        }
+                                        let paramType = findTypeImage(param.children.unannType[0]) || 'Object';
                                         const paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
                                         parameters.push({ name: paramName, type: paramType });
                                     }
