@@ -240,15 +240,26 @@ function getClassesInFile(filePath) {
                     superclass = idents.join('.') || null;
                 }
             }
-            // Implemented interfaces
-            if (normalClass.children.superinterfaces) {
+            // Implemented interfaces (support both 'classImplements' and 'superinterfaces' CST shapes)
+            if (normalClass.children.classImplements && normalClass.children.classImplements[0].children.interfaceTypeList) {
+                const interfaceList = normalClass.children.classImplements[0].children.interfaceTypeList[0];
+                if (interfaceList.children.interfaceType) {
+                    for (const iface of interfaceList.children.interfaceType) {
+                        if (iface.children.classType && iface.children.classType[0].children.Identifier) {
+                            const idents = iface.children.classType[0].children.Identifier.map(id => id.image);
+                            implementedInterfaces.push(idents.join('.'));
+                        }
+                    }
+                }
+            } else if (normalClass.children.superinterfaces) {
                 const superinterfacesNode = normalClass.children.superinterfaces[0];
                 if (superinterfacesNode.children.interfaceTypeList) {
                     const interfaceList = superinterfacesNode.children.interfaceTypeList[0];
                     if (interfaceList.children.interfaceType) {
                         for (const iface of interfaceList.children.interfaceType) {
                             if (iface.children.classType && iface.children.classType[0].children.Identifier) {
-                                implementedInterfaces.push(iface.children.classType[0].children.Identifier[0].image);
+                                const idents = iface.children.classType[0].children.Identifier.map(id => id.image);
+                                implementedInterfaces.push(idents.join('.'));
                             }
                         }
                     }
