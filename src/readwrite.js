@@ -251,20 +251,37 @@ function getClassesInFile(filePath) {
                                     }
                                 }
                             }
-                            // Parameters
+                            // Use the parameter class for method parameters
                             let parameters = [];
                             if (methodHeader.children.methodDeclarator[0].children.formalParameterList) {
                                 const paramList = methodHeader.children.methodDeclarator[0].children.formalParameterList[0];
-                                if (paramList.children.formalParameters) {
-                                    for (const param of paramList.children.formalParameters[0].children.formalParameter) {
-                                        let paramType = findTypeImage(param.children.unannType[0]) || 'Object';
-                                        const paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
-                                        parameters.push({ name: paramName, type: paramType });
+                                // Only handle formalParameter (not varargs for now)
+                                if (paramList.children.formalParameter) {
+                                    for (const param of paramList.children.formalParameter) {
+                                        // Most common case: variableParaRegularParameter
+                                        if (param.children.variableParaRegularParameter) {
+                                            const regParam = param.children.variableParaRegularParameter[0];
+                                            let paramType = 'Object';
+                                            if (regParam.children.unannType && regParam.children.unannType[0]) {
+                                                paramType = findTypeImage(regParam.children.unannType[0]) || 'Object';
+                                            }
+                                            let paramName = 'unknown';
+                                            if (regParam.children.variableDeclaratorId && regParam.children.variableDeclaratorId[0].children.Identifier) {
+                                                paramName = regParam.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                            }
+                                            parameters.push(new parameter(paramName, paramType));
+                                        } else if (param.children.unannType && param.children.variableDeclaratorId) {
+                                            // Fallback for other parameter shapes
+                                            let paramType = findTypeImage(param.children.unannType[0]) || 'Object';
+                                            let paramName = 'unknown';
+                                            if (param.children.variableDeclaratorId[0].children.Identifier) {
+                                                paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                            }
+                                            parameters.push(new parameter(paramName, paramType));
+                                        }
                                     }
                                 }
-                                if (paramList.children.lastFormalParameter) {
-                                    // Handle varargs (optional)
-                                }
+                                // TODO: handle varargs (lastFormalParameter) if needed
                             }
                             clazz.addMethod(new Method(methodName, returnType, parameters, isPrivate));
                         }
