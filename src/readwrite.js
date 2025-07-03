@@ -111,6 +111,22 @@ function getClassesInPath(currentPath) {
     return classes;
 }
 
+function getPackagesInPath(currentPath) {
+    const packages = [];
+    const files = fs.readdirSync(currentPath);
+    for (const name of files) {
+        const fullPath = path.join(currentPath, name);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+            const packageName = path.basename(fullPath);
+            const packageClasses = getClassesInPath(fullPath);
+            const packageObj = new Package(packageName, packageClasses);
+            packages.push(packageObj);
+        }
+    }
+    return packages;
+}
+
 function getClassesInFile(filePath) {
     const classes = [];
     const code = fs.readFileSync(filePath, 'utf8');
@@ -202,22 +218,6 @@ function getClassesInFile(filePath) {
         }
     }
     return classes;
-}
-
-function getPackagesInPath(currentPath) {
-    const packages = [];
-    const files = fs.readdirSync(currentPath);
-    for (const name of files) {
-        const fullPath = path.join(currentPath, name);
-        const stat = fs.statSync(fullPath);
-        if (stat.isDirectory()) {
-            const packageName = path.basename(fullPath);
-            const packageClasses = getClassesInPath(fullPath);
-            const packageObj = new Package(packageName, packageClasses);
-            packages.push(packageObj);
-        }
-    }
-    return packages;
 }
 
 module.exports = {
