@@ -2,6 +2,7 @@
   "name": "javauml",
   "displayName": "JavaUML",
   "icon": "javaUMLIcon.png",
+  "publisher": "Maximillian",
   "galleryBanner.color": {
     "color": "#6b0248",
     "theme": "dark"
