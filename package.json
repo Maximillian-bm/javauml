@@ -1,6 +1,11 @@
 {
   "name": "javauml",
   "displayName": "JavaUML",
+  "icon": "javaUMLIcon.png",
+  "galleryBanner.color": {
+    "color": "#6b0248",
+    "theme": "dark"
+  },
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -10,12 +15,42 @@
     "Other"
   ],
   "activationEvents": [],
-  "main": "./extension.js",
+  "main": "./src/extension.js",
   "contributes": {
-    "commands": [{
-      "command": "javauml.helloWorld",
-      "title": "Hello World"
-    }]
+    "commands": [
+      {
+        "command": "vscode-extension-app.saveSettings",
+        "title": "Save Settings"
+      },
+      {
+        "command": "vscode-extension-app.loadSettings",
+        "title": "Load Settings"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "javaumlView",
+          "name": "JavaUML",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "javauml.settings.sourceFolder": {
+          "type": "string",
+          "default": "",
+          "description": "The source folder location for the project."
+        },
+        "javauml.settings.outputLocation": {
+          "type": "string",
+          "default": "",
+          "description": "The output location for writing files."
+        }
+      }
+    }
   },
   "scripts": {
     "lint": "eslint .",
@@ -23,11 +58,14 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.101.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
-    "eslint": "^9.25.1",
+    "@types/vscode": "^1.101.0",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1"
+  },
+  "dependencies": {
+    "java-parser": "^3.0.1"
   }
 }
