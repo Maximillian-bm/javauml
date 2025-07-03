@@ -1,4 +1,6 @@
-const vscode = require('vscode');
+const fs = require('fs');
+const path = require('path');
+const { parse } = require('java-parser');
 
 class Project {
     constructor(packages, classes) {
@@ -70,9 +72,10 @@ class Method {
 }
 
 function readSourceFolder(sourceFolder) {
-    const fs = require('fs');
-    const path = require('path');
-    const { parse } = require('java-parser');
+    return readProject(sourceFolder);
+}
+
+function readProject(sourceFolder) {
 
     if (!fs.existsSync(sourceFolder)) {
         throw new Error(`Source folder does not exist: ${sourceFolder}`);
@@ -80,68 +83,143 @@ function readSourceFolder(sourceFolder) {
 
     const project = new Project();
 
-    // Helper to recursively find all .java files
-    function findJavaFiles(dir, files = []) {
-        fs.readdirSync(dir).forEach(file => {
-            const fullPath = path.join(dir, file);
-            if (fs.statSync(fullPath).isDirectory()) {
-                findJavaFiles(fullPath, files);
-            } else if (file.endsWith('.java')) {
-                files.push(fullPath);
-            }
-        });
-        return files;
+    const classes = getClassesInPath(sourceFolder);
+
+    for (const clazz of classes) {
+        project.addClass(clazz);
     }
 
-    // Helper to extract class info from CST
-    function extractClasses(cst) {
-        const classes = [];
-        if (!cst.types) return classes;
-        for (const type of cst.types) {
-            if (type.node === 'normalClassDeclaration' || type.node === 'normalInterfaceDeclaration' || type.node === 'enumDeclaration') {
-                const name = type.name.identifier;
-                const isInterface = type.node === 'normalInterfaceDeclaration';
-                const isEnum = type.node === 'enumDeclaration';
-                const isAbstract = !!type.modifiers && type.modifiers.some(m => m.children.abstract);
-                const superclass = type.extends && type.extends.length > 0 ? type.extends[0].typeType.classOrInterfaceType.identifier : null;
-                const clazz = new Class(name, [], [], superclass, [], isAbstract, isInterface, isEnum);
+    const packages = getPackagesInPath(sourceFolder);
 
-                // Fields
-                if (type.bodyDeclarations) {
-                    for (const decl of type.bodyDeclarations) {
-                        if (decl.node === 'fieldDeclaration') {
-                            const fieldType = decl.type ? decl.type.node : 'Object';
-                            for (const varDecl of decl.variableDeclarators) {
-                                const fieldName = varDecl.variableDeclaratorId.identifier;
-                                clazz.addField(new Field(fieldName, fieldType));
+    for (const pkg of packages) {
+        project.addPackage(pkg);
+    }
+
+    return project;
+
+}
+
+function getClassesInPath(currentPath) {
+    const classes = [];
+    for (const file of fs.readdirSync(currentPath)) {
+        if (file.endsWith('.java')){
+            const filePath = path.join(currentPath, file);
+            const fileClasses = getClassesInFile(filePath);
+            classes.push(...fileClasses);
+        }
+    }
+    return classes;
+}
+
+function getClassesInFile(filePath) {
+    const classes = [];
+    const code = fs.readFileSync(filePath, 'utf8');
+    let cst;
+    try {
+        cst = parse(code);
+    } catch (e) {
+        // If parse fails, skip this file
+        return classes;
+    }
+    // Find the root node
+    const root = cst.children.compilationUnit ? cst.children.compilationUnit[0] : cst;
+    if (!root.children || !root.children.typeDeclaration) return classes;
+    const typeDeclarations = root.children.typeDeclaration;
+    for (const typeDecl of typeDeclarations) {
+        if (!typeDecl.children || !typeDecl.children.classDeclaration) continue;
+        for (const classDecl of typeDecl.children.classDeclaration) {
+            const name = classDecl.children.Identifier ? classDecl.children.Identifier[0].image : 'Unknown';
+            const clazz = new Class(name, [], []);
+            // Find classBody
+            if (classDecl.children.classBody && classDecl.children.classBody[0].children.classBodyDeclaration) {
+                const bodyDecls = classDecl.children.classBody[0].children.classBodyDeclaration;
+                for (const bodyDecl of bodyDecls) {
+                    if (!bodyDecl.children) continue;
+                    // Fields
+                    if (bodyDecl.children.fieldDeclaration) {
+                        for (const fieldDecl of bodyDecl.children.fieldDeclaration) {
+                            // Type
+                            let type = 'Object';
+                            if (fieldDecl.children.unannType && fieldDecl.children.unannType[0].children) {
+                                const typeNode = fieldDecl.children.unannType[0].children;
+                                if (typeNode.unannClassOrInterfaceType) {
+                                    type = typeNode.unannClassOrInterfaceType[0].children.Identifier[0].image;
+                                } else if (typeNode.unannPrimitiveType) {
+                                    type = typeNode.unannPrimitiveType[0].image;
+                                }
+                            }
+                            // Variable declarators
+                            if (fieldDecl.children.variableDeclaratorList) {
+                                const varDecls = fieldDecl.children.variableDeclaratorList[0].children.variableDeclarator;
+                                for (const varDecl of varDecls) {
+                                    const fieldName = varDecl.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                    clazz.addField(new Field(fieldName, type));
+                                }
                             }
                         }
-                        // Methods
-                        if (decl.node === 'methodDeclaration') {
-                            const methodName = decl.methodHeader.methodDeclarator.identifier;
-                            const returnType = decl.methodHeader.result.node || 'void';
-                            clazz.addMethod(new Method(methodName, returnType));
+                    }
+                    // Methods
+                    if (bodyDecl.children.methodDeclaration) {
+                        for (const methodDecl of bodyDecl.children.methodDeclaration) {
+                            const methodHeader = methodDecl.children.methodHeader[0];
+                            const methodName = methodHeader.children.methodDeclarator[0].children.Identifier[0].image;
+                            let returnType = 'void';
+                            if (methodHeader.children.result && methodHeader.children.result[0].children.unannType) {
+                                const typeNode = methodHeader.children.result[0].children.unannType[0].children;
+                                if (typeNode.unannClassOrInterfaceType) {
+                                    returnType = typeNode.unannClassOrInterfaceType[0].children.Identifier[0].image;
+                                } else if (typeNode.unannPrimitiveType) {
+                                    returnType = typeNode.unannPrimitiveType[0].image;
+                                }
+                            }
+                            // Parameters
+                            let parameters = [];
+                            if (methodHeader.children.methodDeclarator[0].children.formalParameterList) {
+                                const paramList = methodHeader.children.methodDeclarator[0].children.formalParameterList[0];
+                                if (paramList.children.formalParameters) {
+                                    for (const param of paramList.children.formalParameters[0].children.formalParameter) {
+                                        const paramTypeNode = param.children.unannType[0].children;
+                                        let paramType = 'Object';
+                                        if (paramTypeNode.unannClassOrInterfaceType) {
+                                            paramType = paramTypeNode.unannClassOrInterfaceType[0].children.Identifier[0].image;
+                                        } else if (paramTypeNode.unannPrimitiveType) {
+                                            paramType = paramTypeNode.unannPrimitiveType[0].image;
+                                        }
+                                        const paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                        parameters.push({ name: paramName, type: paramType });
+                                    }
+                                }
+                                if (paramList.children.lastFormalParameter) {
+                                    // Handle varargs (optional)
+                                }
+                            }
+                            clazz.addMethod(new Method(methodName, returnType, parameters));
                         }
                     }
                 }
-                classes.push(clazz);
             }
+            classes.push(clazz);
         }
-        return classes;
     }
-
-    // Process each Java file
-    const javaFiles = findJavaFiles(sourceFolder);
-    javaFiles.forEach(filePath => {
-        const code = fs.readFileSync(filePath, 'utf8');
-        try {
-            const cst = parse(code);
-            const classes = extractClasses(cst);
-            classes.forEach(clazz => project.addClass(clazz));
-        } catch (e) {
-            // Ignore parse errors for now
-        }
-    });
-
-    return project;
+    return classes;
 }
+
+function getPackagesInPath(currentPath) {
+    const packages = [];
+    const files = fs.readdirSync(currentPath);
+    for (const name of files) {
+        const fullPath = path.join(currentPath, name);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+            const packageName = path.basename(fullPath);
+            const packageClasses = getClassesInPath(fullPath);
+            const packageObj = new Package(packageName, packageClasses);
+            packages.push(packageObj);
+        }
+    }
+    return packages;
+}
+
+module.exports = {
+    readSourceFolder
+};

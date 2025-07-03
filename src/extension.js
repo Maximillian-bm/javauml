@@ -1,6 +1,7 @@
 // filepath: /vscode-extension-app/vscode-extension-app/src/extension.js
 const vscode = require('vscode');
 const settings = require('./settings');
+const readWrite = require('./readwrite')
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -104,6 +105,13 @@ class ViewProvider {
 			}
 			if (message.command === 'createUML') {
 				vscode.window.showInformationMessage('Creating UML diagrams...');
+				const userSettings = settings.getSettings();
+				if (userSettings) {
+					const project = readWrite.readSourceFolder(userSettings.sourceFolder);
+					console.log(project);
+        		} else {
+            		vscode.window.showInformationMessage('No settings found.');
+        		}
 			}
     	});
 	}
