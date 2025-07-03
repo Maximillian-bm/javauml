@@ -221,7 +221,41 @@ function getClassesInFile(filePath) {
         } else {
             continue;
         }
-        const clazz = new Class(name, [], [], null, [], isAbstract, isInterface, isEnum);
+        let superclass = null;
+        let implementedInterfaces = [];
+        // Only for normal classes (not enums/interfaces)
+        if (!isEnum && !isInterface && classDecl.children.normalClassDeclaration) {
+            const normalClass = classDecl.children.normalClassDeclaration[0];
+            // Superclass (support both 'superclass' and 'classExtends' CST shapes)
+            if (normalClass.children.classExtends && normalClass.children.classExtends[0].children.classType) {
+                const classTypeNode = normalClass.children.classExtends[0].children.classType[0];
+                if (classTypeNode.children.Identifier) {
+                    const idents = classTypeNode.children.Identifier.map(id => id.image);
+                    superclass = idents.join('.') || null;
+                }
+            } else if (normalClass.children.superclass) {
+                const superNode = normalClass.children.superclass[0];
+                if (superNode.children.classType && superNode.children.classType[0].children.Identifier) {
+                    const idents = superNode.children.classType[0].children.Identifier.map(id => id.image);
+                    superclass = idents.join('.') || null;
+                }
+            }
+            // Implemented interfaces
+            if (normalClass.children.superinterfaces) {
+                const superinterfacesNode = normalClass.children.superinterfaces[0];
+                if (superinterfacesNode.children.interfaceTypeList) {
+                    const interfaceList = superinterfacesNode.children.interfaceTypeList[0];
+                    if (interfaceList.children.interfaceType) {
+                        for (const iface of interfaceList.children.interfaceType) {
+                            if (iface.children.classType && iface.children.classType[0].children.Identifier) {
+                                implementedInterfaces.push(iface.children.classType[0].children.Identifier[0].image);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        const clazz = new Class(name, [], [], superclass, implementedInterfaces, [], isAbstract, isInterface, isEnum);
         // Find classBody
         let classBody = null;
         if (
