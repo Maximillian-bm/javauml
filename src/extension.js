@@ -22,58 +22,131 @@ class ViewProvider {
     	};
 
     	webviewView.webview.html = `
-        	<html>
-        	<body>
-            	<h2>Edit Settings</h2>
-            	<form id="settingsForm">
-                	<label>Source Folder:</label><br>
-                	<input type="text" id="sourceFolder" value="${sourceFolder}" style="width: 80%"/>
-                	<button type="button" id="browseSource">Browse</button><br><br>
-                	<label>Output Folder:</label><br>
-                	<input type="text" id="outputLocation" value="${outputLocation}" style="width: 80%"/>
-                	<button type="button" id="browseOutput">Browse</button><br><br>
-                	<button type="button" id="saveBtn">Save</button>
-					<button type="button" id="createBtn">Create UML</button>
-            	</form>
-            	<div id="msg"></div>
-            	<script>
-                	const vscode = acquireVsCodeApi();
-                	document.getElementById('saveBtn').addEventListener('click', () => {
-	                    const sourceFolder = document.getElementById('sourceFolder').value;
-    	                const outputLocation = document.getElementById('outputLocation').value;
-        	            vscode.postMessage({
-            	            command: 'saveSettings',
-                	        sourceFolder,
-                    	    outputLocation
-                    	});
-                	});
+        	<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<style>
+					body {
+						font-family: sans-serif;
+						padding: 16px;
+						color: #d4d4d4;
+						background-color: #1e1e1e;
+					}
+
+					h2 {
+						margin-top: 0;
+						color: #ffffff;
+						font-size: 18px;
+					}
+
+					label {
+						display: block;
+						margin-top: 12px;
+						margin-bottom: 4px;
+						font-weight: bold;
+					}
+
+					input[type="text"] {
+						width: calc(100% - 90px);
+						padding: 6px 8px;
+						border: 1px solid #333;
+						background-color: #2d2d2d;
+						color: #ffffff;
+						border-radius: 4px;
+						margin-right: 6px;
+					}
+
+					button {
+						background-color: #0e639c;
+						border: none;
+						color: white;
+						padding: 6px 12px;
+						border-radius: 4px;
+						cursor: pointer;
+					}
+
+					button:hover {
+						background-color: #1177bb;
+					}
+
+					.row {
+						display: flex;
+						align-items: center;
+						margin-bottom: 12px;
+					}
+
+					.actions {
+						display: flex;
+						justify-content: space-between;
+						margin-top: 20px;
+					}
+
+					#msg {
+						margin-top: 16px;
+						color: #dcdcaa;
+					}
+				</style>
+			</head>
+			<body>
+				<h2>Edit Settings</h2>
+				<form id="settingsForm">
+					<div class="row">
+						<label for="sourceFolder">Source Folder:</label>
+						<input type="text" id="sourceFolder" value="${sourceFolder}">
+						<button type="button" id="browseSource">Browse</button>
+					</div>
+					<div class="row">
+						<label for="outputLocation">Output Folder:</label>
+						<input type="text" id="outputLocation" value="${outputLocation}">
+						<button type="button" id="browseOutput">Browse</button>
+					</div>
+					<div class="actions">
+						<button type="button" id="saveBtn">💾 Save</button>
+						<button type="button" id="createBtn">📄 Create UML</button>
+					</div>
+				</form>
+				<div id="msg"></div>
+
+				<script>
+					const vscode = acquireVsCodeApi();
+
+					document.getElementById('saveBtn').addEventListener('click', () => {
+						const sourceFolder = document.getElementById('sourceFolder').value;
+						const outputLocation = document.getElementById('outputLocation').value;
+						vscode.postMessage({
+							command: 'saveSettings',
+							sourceFolder,
+							outputLocation
+						});
+					});
 
 					document.getElementById('createBtn').addEventListener('click', () => {
 						vscode.postMessage({ command: 'createUML' });
 					});
 
-                	document.getElementById('browseSource').addEventListener('click', () => {
-                    	vscode.postMessage({ command: 'browseSource' });
-                	});
-                	document.getElementById('browseOutput').addEventListener('click', () => {
-                    	vscode.postMessage({ command: 'browseOutput' });
-	                });
+					document.getElementById('browseSource').addEventListener('click', () => {
+						vscode.postMessage({ command: 'browseSource' });
+					});
 
-    	            window.addEventListener('message', event => {
-        	            const message = event.data;
-            	        if (message.command === 'setSourceFolder') {
-                	        document.getElementById('sourceFolder').value = message.path;
-                    	}
-                    	if (message.command === 'setOutputFolder') {
-                        	document.getElementById('outputLocation').value = message.path;
-                    	}
-                    	if (message.command === 'showMsg') {
-                        	document.getElementById('msg').textContent = message.text;
-                    	}
-                	});
-            	</script>
-        	</body>
-        	</html>
+					document.getElementById('browseOutput').addEventListener('click', () => {
+						vscode.postMessage({ command: 'browseOutput' });
+					});
+
+					window.addEventListener('message', event => {
+						const message = event.data;
+						if (message.command === 'setSourceFolder') {
+							document.getElementById('sourceFolder').value = message.path;
+						}
+						if (message.command === 'setOutputFolder') {
+							document.getElementById('outputLocation').value = message.path;
+						}
+						if (message.command === 'showMsg') {
+							document.getElementById('msg').textContent = message.text;
+						}
+					});
+				</script>
+			</body>
+			</html>
     	`;
 
     	webviewView.webview.onDidReceiveMessage(async message => {
