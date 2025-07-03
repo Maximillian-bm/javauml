@@ -1,6 +1,11 @@
 {
   "name": "javauml",
   "displayName": "JavaUML",
+  "icon": "javaUMLIcon.png",
+  "galleryBanner.color": {
+    "color": "#6b0248",
+    "theme": "dark"
+  },
   "description": "",
   "version": "0.0.1",
   "engines": {
