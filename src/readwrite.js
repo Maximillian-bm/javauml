@@ -30,11 +30,12 @@ class Package {
 }
 
 class Class {
-    constructor(name, methods, fields, superclass, containedClasses, isAbstract = false, isInterface = false, isEnum = false) {
+    constructor(name, methods, fields, superclass, implementedInterfaces, containedClasses, isAbstract = false, isInterface = false, isEnum = false) {
         this.name = name;
         this.methods = methods || [];
         this.fields = fields || [];
         this.superclass = superclass || null;
+        this.implementedInterfaces = implementedInterfaces || [];
         this.containedClasses = containedClasses || [];
         this.isAbstract = isAbstract;
         this.isInterface = isInterface;
@@ -178,10 +179,38 @@ function getClassesInFile(filePath) {
     if (!root.children || !root.children.typeDeclaration) return classes;
     const typeDeclarations = root.children.typeDeclaration;
     for (const typeDecl of typeDeclarations) {
-        if (!typeDecl.children || !typeDecl.children.classDeclaration) continue;
-        for (const classDecl of typeDecl.children.classDeclaration) {
-            // Extract class name from typeIdentifier
-            let name = 'Unknown';
+        let isEnum = false;
+        let isInterface = false;
+        let isAbstract = false;
+        let name = 'Unknown';
+        let classDecl = null;
+        // Check for enum
+        if (typeDecl.children && typeDecl.children.enumDeclaration) {
+            isEnum = true;
+            classDecl = typeDecl.children.enumDeclaration[0];
+            // Enum name
+            if (classDecl.children.Identifier) {
+                name = classDecl.children.Identifier[0].image;
+            }
+        } else if (typeDecl.children && typeDecl.children.interfaceDeclaration) {
+            isInterface = true;
+            classDecl = typeDecl.children.interfaceDeclaration[0];
+            // Interface name
+            if (classDecl.children.normalInterfaceDeclaration && classDecl.children.normalInterfaceDeclaration[0].children.typeIdentifier) {
+                name = classDecl.children.normalInterfaceDeclaration[0].children.typeIdentifier[0].children.Identifier[0].image;
+            }
+        } else if (typeDecl.children && typeDecl.children.classDeclaration) {
+            classDecl = typeDecl.children.classDeclaration[0];
+            // Abstract class detection
+            if (classDecl.children.classModifier) {
+                for (const modifier of classDecl.children.classModifier) {
+                    if (modifier.children && modifier.children.Abstract) {
+                        isAbstract = true;
+                        break;
+                    }
+                }
+            }
+            // Class name
             if (
                 classDecl.children.normalClassDeclaration &&
                 classDecl.children.normalClassDeclaration[0].children.typeIdentifier &&
@@ -189,108 +218,110 @@ function getClassesInFile(filePath) {
             ) {
                 name = classDecl.children.normalClassDeclaration[0].children.typeIdentifier[0].children.Identifier[0].image;
             }
-            const clazz = new Class(name, [], []);
-            // Find classBody
-            let classBody = null;
-            if (
-                classDecl.children.normalClassDeclaration &&
-                classDecl.children.normalClassDeclaration[0].children.classBody
-            ) {
-                classBody = classDecl.children.normalClassDeclaration[0].children.classBody[0];
-            }
-            if (classBody && classBody.children.classBodyDeclaration) {
-                const bodyDecls = classBody.children.classBodyDeclaration;
-                for (const bodyDecl of bodyDecls) {
-                    if (!bodyDecl.children || !bodyDecl.children.classMemberDeclaration) continue;
-                    const memberDecl = bodyDecl.children.classMemberDeclaration[0];
-                    // Fields
-                    if (memberDecl.children.fieldDeclaration) {
-                        for (const fieldDecl of memberDecl.children.fieldDeclaration) {
-                            // Type
-                            let type = 'Object';
-                            if (fieldDecl.children.unannType && fieldDecl.children.unannType[0]) {
-                                type = findTypeImage(fieldDecl.children.unannType[0]) || 'Object';
-                            }
-                            // Check for private modifier
-                            let isPrivate = false;
-                            if (fieldDecl.children.fieldModifier) {
-                                for (const modifier of fieldDecl.children.fieldModifier) {
-                                    if (modifier.children && modifier.children.Private) {
-                                        isPrivate = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            // Variable declarators
-                            if (fieldDecl.children.variableDeclaratorList) {
-                                const varDecls = fieldDecl.children.variableDeclaratorList[0].children.variableDeclarator;
-                                for (const varDecl of varDecls) {
-                                    const fieldName = varDecl.children.variableDeclaratorId[0].children.Identifier[0].image;
-                                    clazz.addField(new Field(fieldName, type, isPrivate));
+        } else {
+            continue;
+        }
+        const clazz = new Class(name, [], [], null, [], isAbstract, isInterface, isEnum);
+        // Find classBody
+        let classBody = null;
+        if (
+            classDecl.children.normalClassDeclaration &&
+            classDecl.children.normalClassDeclaration[0].children.classBody
+        ) {
+            classBody = classDecl.children.normalClassDeclaration[0].children.classBody[0];
+        }
+        if (classBody && classBody.children.classBodyDeclaration) {
+            const bodyDecls = classBody.children.classBodyDeclaration;
+            for (const bodyDecl of bodyDecls) {
+                if (!bodyDecl.children || !bodyDecl.children.classMemberDeclaration) continue;
+                const memberDecl = bodyDecl.children.classMemberDeclaration[0];
+                // Fields
+                if (memberDecl.children.fieldDeclaration) {
+                    for (const fieldDecl of memberDecl.children.fieldDeclaration) {
+                        // Type
+                        let type = 'Object';
+                        if (fieldDecl.children.unannType && fieldDecl.children.unannType[0]) {
+                            type = findTypeImage(fieldDecl.children.unannType[0]) || 'Object';
+                        }
+                        // Check for private modifier
+                        let isPrivate = false;
+                        if (fieldDecl.children.fieldModifier) {
+                            for (const modifier of fieldDecl.children.fieldModifier) {
+                                if (modifier.children && modifier.children.Private) {
+                                    isPrivate = true;
+                                    break;
                                 }
                             }
                         }
-                    }
-                    // Methods
-                    if (memberDecl.children.methodDeclaration) {
-                        for (const methodDecl of memberDecl.children.methodDeclaration) {
-                            const methodHeader = methodDecl.children.methodHeader[0];
-                            const methodName = methodHeader.children.methodDeclarator[0].children.Identifier[0].image;
-                            // Return type
-                            let returnType = 'void';
-                            if (methodHeader.children.result && methodHeader.children.result[0].children.unannType) {
-                                returnType = findTypeImage(methodHeader.children.result[0].children.unannType[0]) || 'void';
+                        // Variable declarators
+                        if (fieldDecl.children.variableDeclaratorList) {
+                            const varDecls = fieldDecl.children.variableDeclaratorList[0].children.variableDeclarator;
+                            for (const varDecl of varDecls) {
+                                const fieldName = varDecl.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                clazz.addField(new Field(fieldName, type, isPrivate));
                             }
-                            // Check for private modifier (robust)
-                            let isPrivate = false;
-                            if (methodDecl.children.methodModifier) {
-                                for (const modifier of methodDecl.children.methodModifier) {
-                                    // Each modifier may have multiple children (e.g., Private, Static, etc.)
-                                    if (modifier.children && modifier.children.Private) {
-                                        isPrivate = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            // Use the parameter class for method parameters
-                            let parameters = [];
-                            if (methodHeader.children.methodDeclarator[0].children.formalParameterList) {
-                                const paramList = methodHeader.children.methodDeclarator[0].children.formalParameterList[0];
-                                // Only handle formalParameter (not varargs for now)
-                                if (paramList.children.formalParameter) {
-                                    for (const param of paramList.children.formalParameter) {
-                                        // Most common case: variableParaRegularParameter
-                                        if (param.children.variableParaRegularParameter) {
-                                            const regParam = param.children.variableParaRegularParameter[0];
-                                            let paramType = 'Object';
-                                            if (regParam.children.unannType && regParam.children.unannType[0]) {
-                                                paramType = findTypeImage(regParam.children.unannType[0]) || 'Object';
-                                            }
-                                            let paramName = 'unknown';
-                                            if (regParam.children.variableDeclaratorId && regParam.children.variableDeclaratorId[0].children.Identifier) {
-                                                paramName = regParam.children.variableDeclaratorId[0].children.Identifier[0].image;
-                                            }
-                                            parameters.push(new parameter(paramName, paramType));
-                                        } else if (param.children.unannType && param.children.variableDeclaratorId) {
-                                            // Fallback for other parameter shapes
-                                            let paramType = findTypeImage(param.children.unannType[0]) || 'Object';
-                                            let paramName = 'unknown';
-                                            if (param.children.variableDeclaratorId[0].children.Identifier) {
-                                                paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
-                                            }
-                                            parameters.push(new parameter(paramName, paramType));
-                                        }
-                                    }
-                                }
-                                // TODO: handle varargs (lastFormalParameter) if needed
-                            }
-                            clazz.addMethod(new Method(methodName, returnType, parameters, isPrivate));
                         }
                     }
                 }
+                // Methods
+                if (memberDecl.children.methodDeclaration) {
+                    for (const methodDecl of memberDecl.children.methodDeclaration) {
+                        const methodHeader = methodDecl.children.methodHeader[0];
+                        const methodName = methodHeader.children.methodDeclarator[0].children.Identifier[0].image;
+                        // Return type
+                        let returnType = 'void';
+                        if (methodHeader.children.result && methodHeader.children.result[0].children.unannType) {
+                            returnType = findTypeImage(methodHeader.children.result[0].children.unannType[0]) || 'void';
+                        }
+                        // Check for private modifier (robust)
+                        let isPrivate = false;
+                        if (methodDecl.children.methodModifier) {
+                            for (const modifier of methodDecl.children.methodModifier) {
+                                // Each modifier may have multiple children (e.g., Private, Static, etc.)
+                                if (modifier.children && modifier.children.Private) {
+                                    isPrivate = true;
+                                    break;
+                                }
+                            }
+                        }
+                        // Use the parameter class for method parameters
+                        let parameters = [];
+                        if (methodHeader.children.methodDeclarator[0].children.formalParameterList) {
+                            const paramList = methodHeader.children.methodDeclarator[0].children.formalParameterList[0];
+                            // Only handle formalParameter (not varargs for now)
+                            if (paramList.children.formalParameter) {
+                                for (const param of paramList.children.formalParameter) {
+                                    // Most common case: variableParaRegularParameter
+                                    if (param.children.variableParaRegularParameter) {
+                                        const regParam = param.children.variableParaRegularParameter[0];
+                                        let paramType = 'Object';
+                                        if (regParam.children.unannType && regParam.children.unannType[0]) {
+                                            paramType = findTypeImage(regParam.children.unannType[0]) || 'Object';
+                                        }
+                                        let paramName = 'unknown';
+                                        if (regParam.children.variableDeclaratorId && regParam.children.variableDeclaratorId[0].children.Identifier) {
+                                            paramName = regParam.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                        }
+                                        parameters.push(new parameter(paramName, paramType));
+                                    } else if (param.children.unannType && param.children.variableDeclaratorId) {
+                                        // Fallback for other parameter shapes
+                                        let paramType = findTypeImage(param.children.unannType[0]) || 'Object';
+                                        let paramName = 'unknown';
+                                        if (param.children.variableDeclaratorId[0].children.Identifier) {
+                                            paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                        }
+                                        parameters.push(new parameter(paramName, paramType));
+                                    }
+                                }
+                            }
+                            // TODO: handle varargs (lastFormalParameter) if needed
+                        }
+                        clazz.addMethod(new Method(methodName, returnType, parameters, isPrivate));
+                    }
+                }
             }
-            classes.push(clazz);
         }
+        classes.push(clazz);
     }
     return classes;
 }
