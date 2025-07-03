@@ -80,7 +80,46 @@ class parameter {
 }
 
 function readSourceFolder(sourceFolder) {
-    return readProject(sourceFolder);
+    const project = readProject(sourceFolder);
+    const listOfClassNames = project.classes.map(clazz => clazz.name);
+    for (const packageObj of project.packages) {
+        findClassNames(listOfClassNames, packageObj);
+    }
+    for (const classObj of project.classes) {
+        addContainedClass(listOfClassNames, classObj);
+    }
+    for (const packageObj of project.packages) {
+        addContainedClassOfPackages(listOfClassNames, packageObj);
+    }
+    return project;
+}
+
+function addContainedClassOfPackages(listOfClassNames, packageObj) {
+    for (const clazz of packageObj.classes) {
+        addContainedClass(listOfClassNames, clazz);
+    }
+    for (const subPackage of packageObj.containedPackages) {
+        addContainedClassOfPackages(listOfClassNames, subPackage);
+    }
+    return listOfClassNames;    
+}
+
+function findClassNames(listOfClassNames, packageObj) {
+    for (const clazz of packageObj.classes) {
+        listOfClassNames.push(clazz.name);
+    }
+    for (const subPackage of packageObj.containedPackages) {
+        findClassNames(listOfClassNames, subPackage);
+    }
+    return listOfClassNames;    
+}
+
+function addContainedClass(listOfClassNames, classObj) {
+    for (const field of classObj.fields) {
+        if (listOfClassNames.includes(field.type)) {
+            classObj.containedClasses.push(field.type);
+        }
+    }
 }
 
 function readProject(sourceFolder) {
