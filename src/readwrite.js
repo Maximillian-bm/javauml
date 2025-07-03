@@ -71,6 +71,13 @@ class Method {
     }
 }
 
+class parameter {
+    constructor(name, type) {
+        this.name = name;
+        this.type = type;
+    }
+}
+
 function readSourceFolder(sourceFolder) {
     return readProject(sourceFolder);
 }
