@@ -50,6 +50,24 @@ class Project {
     }
 }
 
+class dict {
+    constructor() {
+        this.data = {};
+    }
+    add(key, value) {
+        if (!this.data[key]) {
+            this.data[key] = [];
+        }
+        this.data[key].push(value);
+    }
+    get(key) {
+        return this.data[key] || [];
+    }
+    has(key) {
+        return key in this.data;
+    }
+}
+
 class Package {
     constructor(name, classes, containedPackages) {
         this.name = name;
