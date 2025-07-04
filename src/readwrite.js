@@ -40,7 +40,7 @@ class Project {
                 dictOfContainedClasses.add(containes);
             }
         }
-        for (const containedClass of dictOfContainedClasses.data) {
+        for (const containedClass of dictOfContainedClasses.getAll()) {
             if (dictOfContainedClasses.get(containedClass) == 1) {
                 uml.push(`  ${clazz.name} o-- ${containedClass}: contains`);
             }else if (dictOfContainedClasses.get(containedClass) > 1) {
@@ -61,16 +61,21 @@ class Project {
 class dict {
     constructor() {
         this.data = {};
+        this.itterbleList = [];
     }
     add(key) {
-        if (!this.data[key]) {
-            this.data[key] = 0;
+        if (!this.itterbleList.includes(key)) {
+            this.data[key] = 1;
+            this.itterbleList.push(key);
         }else {
             this.data[key]++;
         }
     }
     get(key) {
         return this.data[key] || 0;
+    }
+    getAll() {
+        return this.itterbleList;
     }
 }
 
