@@ -187,6 +187,7 @@ class parameter {
 
 function readSourceFolder(sourceFolder) {
     const project = readProject(sourceFolder);
+    fixAllNestedPackages(project);
     const listOfClassNames = project.classes.map(clazz => clazz.name);
     for (const packageObj of project.packages) {
         findClassNames(listOfClassNames, packageObj);
@@ -199,6 +200,37 @@ function readSourceFolder(sourceFolder) {
     }
     project.listOfClassNames = listOfClassNames;
     return project;
+}
+
+function fixAllNestedPackages(project){
+    for(const pkg of project.packages){
+        fixNestedSubPackages(pkg);
+    }
+}
+
+function fixNestedSubPackages(packageObj){
+    removeNestedPackages(packageObj);
+    for(const pkg of packageObj.containedPackages){
+        removeNestedPackages(pkg);
+    }
+}
+
+function removeNestedPackages(packageObj){
+    var name = packageObj.name;
+    const fixedPackage = recursiveNestedPackageFinder(name, packageObj);
+    packageObj.name = fixedPackage.name;
+    packageObj.classes = fixedPackage.classes;
+    packageObj.containedPackages = fixedPackage.containedPackages;
+}
+
+function recursiveNestedPackageFinder(name, packageObj){
+    if(packageObj.classes.length == 0 && packageObj.containedPackages.length == 1){
+        const innerPackage = packageObj.containedPackages[0];
+        name += '/' +innerPackage.name;
+        return recursiveNestedPackageFinder(name, innerPackage);
+    }else{
+        return new Package(name, packageObj.classes, packageObj.containedPackages);
+    }
 }
 
 function addContainedClassOfPackages(listOfClassNames, packageObj) {
