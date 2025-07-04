@@ -201,6 +201,16 @@ function readSourceFolder(sourceFolder) {
     return project;
 }
 
+function recursiveNestedPackageFinder(name, packageObj){
+    if(packageObj.classes.length == 0 && packageObj.containedPackages.length == 1){
+        const innerPackage = packageObj.containedPackages[0];
+        name += '/' +innerPackage.name;
+        return recursiveNestedPackageFinder(name, innerPackage);
+    }else{
+        return new Package(name, packageObj.classes, packageObj.containedPackages);
+    }
+}
+
 function addContainedClassOfPackages(listOfClassNames, packageObj) {
     for (const clazz of packageObj.classes) {
         addContainedClass(listOfClassNames, clazz);
