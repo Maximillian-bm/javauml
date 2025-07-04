@@ -1,11 +1,14 @@
 {
   "name": "javauml",
   "displayName": "JavaUML",
-  "icon": "javaUMLIcon.png",
+  "publisher": "Maximillian",
   "galleryBanner.color": {
     "color": "#6b0248",
     "theme": "dark"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Maximillian-bm/javauml.git"},
   "description": "",
   "version": "0.0.1",
   "engines": {

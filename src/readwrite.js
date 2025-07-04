@@ -34,9 +34,17 @@ class Project {
         return uml;
     }
     addContainArrows(uml, clazz) {
+        const dictOfContainedClasses = new dict();
         for (const containes of clazz.containedClasses) {
             if (this.listOfClassNames.includes(containes)) {
-                uml.push(`  ${clazz.name} o-- ${containes}: contains`);
+                dictOfContainedClasses.add(containes);
+            }
+        }
+        for (const containedClass of dictOfContainedClasses.getAll()) {
+            if (dictOfContainedClasses.get(containedClass) == 1) {
+                uml.push(`  ${clazz.name} o-- ${containedClass}: contains`);
+            }else if (dictOfContainedClasses.get(containedClass) > 1) {
+                uml.push(`  ${clazz.name} "1" o-- "many" ${containedClass}: contains`);
             }
         }
     }
@@ -47,6 +55,27 @@ class Project {
         for (const subPackage of pkg.containedPackages) {
             this.addContainArrowsFromPackages(uml, subPackage);
         }
+    }
+}
+
+class dict {
+    constructor() {
+        this.data = {};
+        this.itterbleList = [];
+    }
+    add(key) {
+        if (!this.itterbleList.includes(key)) {
+            this.data[key] = 1;
+            this.itterbleList.push(key);
+        }else {
+            this.data[key]++;
+        }
+    }
+    get(key) {
+        return this.data[key] || 0;
+    }
+    getAll() {
+        return this.itterbleList;
     }
 }
 
