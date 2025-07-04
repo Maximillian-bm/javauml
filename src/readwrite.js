@@ -201,6 +201,14 @@ function readSourceFolder(sourceFolder) {
     return project;
 }
 
+function removeNestedPackages(packageObj){
+    var name = packageObj.name;
+    const fixedPackage = recursiveNestedPackageFinder(name, packageObj);
+    packageObj.name = fixedPackage.name;
+    packageObj.classes = fixedPackage.classes;
+    packageObj.containedPackages = fixedPackage.containedPackages;
+}
+
 function recursiveNestedPackageFinder(name, packageObj){
     if(packageObj.classes.length == 0 && packageObj.containedPackages.length == 1){
         const innerPackage = packageObj.containedPackages[0];
