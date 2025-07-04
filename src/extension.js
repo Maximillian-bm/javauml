@@ -21,7 +21,7 @@ class ViewProvider {
         	enableScripts: true
     	};
 
-    	webviewView.webview.html = `
+    	webviewView.webview.html = /*html*/`
         	<html lang="en">
 			<head>
 				<meta charset="UTF-8">
@@ -102,7 +102,8 @@ class ViewProvider {
 					</div>
 					<div class="actions">
 						<button type="button" id="saveBtn">💾 Save</button>
-						<button type="button" id="createBtn">📄 Create UML</button>
+						<button type="button" id="createUmlBtn">📄 Create UML</button>
+						<button type="button" id="createJavaBtn">📄 Create Java</button>
 					</div>
 				</form>
 				<div id="msg"></div>
@@ -120,8 +121,12 @@ class ViewProvider {
 						});
 					});
 
-					document.getElementById('createBtn').addEventListener('click', () => {
+					document.getElementById('createUmlBtn').addEventListener('click', () => {
 						vscode.postMessage({ command: 'createUML' });
+					});
+
+					document.getElementById('createJavaBtn').addEventListener('click', () => {
+						vscode.postMessage({ command: 'createJava' });
 					});
 
 					document.getElementById('browseSource').addEventListener('click', () => {
@@ -186,6 +191,9 @@ class ViewProvider {
         		} else {
             		vscode.window.showInformationMessage('No settings found.');
         		}
+			}
+			if (message.command === 'createJava') {
+				vscode.window.showInformationMessage('Creating Java project...');				
 			}
     	});
 	}
