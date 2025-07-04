@@ -34,9 +34,17 @@ class Project {
         return uml;
     }
     addContainArrows(uml, clazz) {
+        const dictOfContainedClasses = new dict();
         for (const containes of clazz.containedClasses) {
             if (this.listOfClassNames.includes(containes)) {
-                uml.push(`  ${clazz.name} o-- ${containes}: contains`);
+                dictOfContainedClasses.add(containes);
+            }
+        }
+        for (const containedClass of dictOfContainedClasses.data) {
+            if (dictOfContainedClasses.get(containedClass) == 1) {
+                uml.push(`  ${clazz.name} o-- ${containedClass}: contains`);
+            }else if (dictOfContainedClasses.get(containedClass) > 1) {
+                uml.push(`  ${clazz.name} "1" o-- "many" ${containedClass}: contains`);
             }
         }
     }
