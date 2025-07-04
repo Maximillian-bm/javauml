@@ -1,7 +1,7 @@
 // filepath: /vscode-extension-app/vscode-extension-app/src/extension.js
 const vscode = require('vscode');
 const settings = require('./settings');
-const readWrite = require('./readwrite')
+const readWrite = require('./parsingJava')
 
 /**
  * @param {vscode.ExtensionContext} context
