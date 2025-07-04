@@ -54,17 +54,15 @@ class dict {
     constructor() {
         this.data = {};
     }
-    add(key, value) {
+    add(key) {
         if (!this.data[key]) {
-            this.data[key] = [];
+            this.data[key] = 0;
+        }else {
+            this.data[key]++;
         }
-        this.data[key].push(value);
     }
     get(key) {
-        return this.data[key] || [];
-    }
-    has(key) {
-        return key in this.data;
+        return this.data[key] || 0;
     }
 }
 
