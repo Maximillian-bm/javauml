@@ -169,7 +169,9 @@ class Class {
             field.toJava(lines);
         }
 
-        //TOD: methods
+        for(const method of this.methods){
+            method.toJava(lines);
+        }
 
         const lastLine = '}';
 
@@ -233,12 +235,35 @@ class Method {
         this.parameters = parameters || [];
         this.isPrivate = isPrivate;
     }
+
+    toJava(lines){
+        var line = '    public ';
+        if(this.isPrivate){
+            line = '    private ';
+        }
+        line += this.returnType + ' ' + this.name + '(';
+        if(this.parameters.length != 0){
+            line += this.parameters[0].toJava();
+            for(const param of this.parameters){
+                if(param.toJava().valueOf() != this.parameters[0].toJava().valueOf()){
+                    line += ', ' + param.toJava();
+                }
+            }
+        }
+        line += ') {'
+        lines.push(line);
+        lines.push('        //TODO');
+        lines.push('    }');
+    }
 }
 
 class Parameter {
     constructor(name, type) {
         this.name = name;
         this.type = type;
+    }
+    toJava(){
+        return this.type + ' ' + this.name;
     }
 }
 
