@@ -128,7 +128,50 @@ class Class {
     }
 
     toJava(){
-        return ['Hello', 'World!!!'];
+        const lines = [];
+        var firstLine = 'public';
+        if(this.isPrivate){
+            firstLine = 'private';
+        }
+
+        if(this.isAbstract){
+            firstLine += ' abstract';
+        }
+
+        if(this.isInterface){
+            firstLine += ' interface ';
+        }else if(this.isEnum){
+            firstLine += ' enum ';
+        }else{
+            firstLine += ' class ';
+        }
+
+        firstLine += this.name;
+
+        if(this.superclass != null){
+            firstLine += ' extends ' + this.superclass;
+        }
+
+        if(this.implementedInterfaces.length != 0){
+            firstLine += ' implements ' + this.implementedInterfaces[0];
+            for(const impl of this.implementedInterfaces){
+                if(impl.valueOf() != this.implementedInterfaces[0].valueOf()){
+                    firstLine += ', ' + impl;
+                }
+            }
+        }
+
+        firstLine += ' {';
+
+        lines.push(firstLine);
+
+        //TOD: fields and methods
+
+        const lastLine = '}';
+
+        lines.push(lastLine);
+
+        return lines;
     }
 
     toUML(uml, depth) {
