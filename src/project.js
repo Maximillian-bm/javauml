@@ -164,7 +164,8 @@ class Class {
         firstLine += ' {';
 
         lines.push(firstLine);
-
+        lines.push(' ');
+        
         for(const field of this.fields){
             field.toJava(lines);
         }
@@ -237,6 +238,7 @@ class Method {
     }
 
     toJava(lines){
+        lines.push('');
         var line = '    public ';
         if(this.isPrivate){
             line = '    private ';
