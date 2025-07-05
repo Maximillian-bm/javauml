@@ -198,7 +198,11 @@ class ViewProvider {
 				const userSettings = settings.getSettings();
 				if (userSettings) {
 					const project = umlParser.readUMLfile(userSettings.outputLocation);
-					umlParser.writeProjectToJava(project, userSettings.sourceFolder);
+					if(project == null){
+						vscode.window.showErrorMessage('No diagram found, make sure to name it diagram.puml');
+					}else{
+						umlParser.writeProjectToJava(project, userSettings.sourceFolder);
+					}
         		} else {
             		vscode.window.showInformationMessage('No settings found.');
         		}
