@@ -127,6 +127,60 @@ class Class {
         this.containedClasses.push(clazz);
     }
 
+    toJava(){
+        const lines = [];
+        var firstLine = 'public';
+        if(this.isPrivate){
+            firstLine = 'private';
+        }
+
+        if(this.isAbstract){
+            firstLine += ' abstract';
+        }
+
+        if(this.isInterface){
+            firstLine += ' interface ';
+        }else if(this.isEnum){
+            firstLine += ' enum ';
+        }else{
+            firstLine += ' class ';
+        }
+
+        firstLine += this.name;
+
+        if(this.superclass != null){
+            firstLine += ' extends ' + this.superclass;
+        }
+
+        if(this.implementedInterfaces.length != 0){
+            firstLine += ' implements ' + this.implementedInterfaces[0];
+            for(const impl of this.implementedInterfaces){
+                if(impl.valueOf() != this.implementedInterfaces[0].valueOf()){
+                    firstLine += ', ' + impl;
+                }
+            }
+        }
+
+        firstLine += ' {';
+
+        lines.push(firstLine);
+        lines.push(' ');
+        
+        for(const field of this.fields){
+            field.toJava(lines);
+        }
+
+        for(const method of this.methods){
+            method.toJava(lines);
+        }
+
+        const lastLine = '}';
+
+        lines.push(lastLine);
+
+        return lines;
+    }
+
     toUML(uml, depth) {
         const indent = ' '.repeat(depth * 2);
         var type = 'class ';
@@ -165,6 +219,14 @@ class Field {
         this.type = type;
         this.isPrivate = isPrivate;
     }
+    toJava(lines){
+        var line = '    public ';
+        if(this.isPrivate){
+            line = '    private ';
+        }
+        line += this.type + ' ' + this.name + ';';
+        lines.push(line);
+    }
 }
 
 class Method {
@@ -174,12 +236,39 @@ class Method {
         this.parameters = parameters || [];
         this.isPrivate = isPrivate;
     }
+
+    toJava(lines){
+        lines.push('');
+        var line = '    public ';
+        if(this.isPrivate){
+            line = '    private ';
+        }
+        line += this.returnType + ' ' + this.name + '(';
+        if(this.parameters.length != 0){
+            line += this.parameters[0].toJava();
+            for(const param of this.parameters){
+                if(param.toJava().valueOf() != this.parameters[0].toJava().valueOf()){
+                    line += ', ' + param.toJava();
+                }
+            }
+        }
+        line += ') {'
+        lines.push(line);
+        lines.push('        //TODO');
+        if(this.returnType.valueOf() != 'void'.valueOf()){
+            lines.push('        return null;');
+        }
+        lines.push('    }');
+    }
 }
 
 class Parameter {
     constructor(name, type) {
         this.name = name;
         this.type = type;
+    }
+    toJava(){
+        return this.type + ' ' + this.name;
     }
 }
 

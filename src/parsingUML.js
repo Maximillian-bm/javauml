@@ -140,6 +140,41 @@ function isPackage(lines, currentLine){
     }
 }
 
+function writeProjectToJava(project, srcFolder){
+    for(const pkg of project.packages){
+        writePackageToJava(pkg, srcFolder);
+    }
+    for(const clazz of project.classes){
+        writeClassToJava(clazz, srcFolder)
+    }
+}
+
+function writePackageToJava(pkg, currentPath){
+
+    const innerPath = path.join(currentPath, pkg.name);
+
+    if (!fs.existsSync(innerPath)) {
+        fs.mkdirSync(innerPath, { recursive: true });
+    }
+
+    for(const packageObj of pkg.containedPackages){
+        writePackageToJava(packageObj, innerPath);
+    }
+    for(const clazz of pkg.classes){
+        writeClassToJava(clazz, innerPath)
+    }
+}
+
+function writeClassToJava(clazz, currentPath){
+
+    const fileName = clazz.name + '.java';
+
+    const javaFile = path.join(currentPath, fileName);
+
+    fs.writeFileSync(javaFile, clazz.toJava().join('\n'), 'utf8');
+}
+
 module.exports = {
-    readUMLfile
+    readUMLfile,
+    writeProjectToJava
 };

@@ -198,7 +198,7 @@ class ViewProvider {
 				const userSettings = settings.getSettings();
 				if (userSettings) {
 					const project = umlParser.readUMLfile(userSettings.outputLocation);
-					console.log(project);
+					umlParser.writeProjectToJava(project, userSettings.sourceFolder);
         		} else {
             		vscode.window.showInformationMessage('No settings found.');
         		}
