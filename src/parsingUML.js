@@ -157,8 +157,8 @@ function writePackageToJava(pkg, currentPath){
         fs.mkdirSync(innerPath, { recursive: true });
     }
 
-    for(const pkg of pkg.containedPackages){
-        writePackageToJava(pkg, innerPath);
+    for(const packageObj of pkg.containedPackages){
+        writePackageToJava(packageObj, innerPath);
     }
     for(const clazz of pkg.classes){
         writeClassToJava(clazz, innerPath)
@@ -171,7 +171,7 @@ function writeClassToJava(clazz, currentPath){
 
     const javaFile = path.join(currentPath, fileName);
 
-    fs.writeFileSync(javaFile, clazz.toJava.join('\n'), 'utf8');
+    fs.writeFileSync(javaFile, clazz.toJava().join('\n'), 'utf8');
 }
 
 module.exports = {

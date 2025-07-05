@@ -127,6 +127,10 @@ class Class {
         this.containedClasses.push(clazz);
     }
 
+    toJava(){
+        return ['Hello', 'World!!!'];
+    }
+
     toUML(uml, depth) {
         const indent = ' '.repeat(depth * 2);
         var type = 'class ';
