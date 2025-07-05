@@ -284,6 +284,14 @@ function getClassesInFile(filePath) {
         ) {
             classBody = classDecl.children.normalClassDeclaration[0].children.classBody[0];
         }
+        //handle interfaceBody for interfaces
+        if (
+            isInterface &&
+            classDecl.children.normalInterfaceDeclaration &&
+            classDecl.children.normalInterfaceDeclaration[0].children.interfaceBody
+        ) {
+            classBody = classDecl.children.normalInterfaceDeclaration[0].children.interfaceBody[0];
+        }
         if (classBody && classBody.children.classBodyDeclaration) {
             const bodyDecls = classBody.children.classBodyDeclaration;
             for (const bodyDecl of bodyDecls) {
@@ -372,6 +380,51 @@ function getClassesInFile(filePath) {
                         clazz.addMethod(new projectClasses.Method(methodName, returnType, parameters, isPrivate));
                     }
                 }
+            }
+        }
+        //handle interface methods
+        if (isInterface && classBody && classBody.children.interfaceMemberDeclaration) {
+            const memberDecls = classBody.children.interfaceMemberDeclaration;
+            for (const memberDecl of memberDecls) {
+                if (!memberDecl.children || !memberDecl.children.interfaceMethodDeclaration) continue;
+                const methodDecl = memberDecl.children.interfaceMethodDeclaration[0];
+                const methodHeader = methodDecl.children.methodHeader[0];
+                const methodName = methodHeader.children.methodDeclarator[0].children.Identifier[0].image;
+                //return type
+                let returnType = 'void';
+                if (methodHeader.children.result && methodHeader.children.result[0].children.unannType) {
+                    returnType = findTypeImage(methodHeader.children.result[0].children.unannType[0]) || 'void';
+                }
+                //parameters
+                let parameters = [];
+                if (methodHeader.children.methodDeclarator[0].children.formalParameterList) {
+                    const paramList = methodHeader.children.methodDeclarator[0].children.formalParameterList[0];
+                    if (paramList.children.formalParameter) {
+                        for (const param of paramList.children.formalParameter) {
+                            if (param.children.variableParaRegularParameter) {
+                                const regParam = param.children.variableParaRegularParameter[0];
+                                let paramType = 'Object';
+                                if (regParam.children.unannType && regParam.children.unannType[0]) {
+                                    paramType = findTypeImage(regParam.children.unannType[0]) || 'Object';
+                                }
+                                let paramName = 'unknown';
+                                if (regParam.children.variableDeclaratorId && regParam.children.variableDeclaratorId[0].children.Identifier) {
+                                    paramName = regParam.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                }
+                                parameters.push(new projectClasses.Parameter(paramName, paramType));
+                            } else if (param.children.unannType && param.children.variableDeclaratorId) {
+                                let paramType = findTypeImage(param.children.unannType[0]) || 'Object';
+                                let paramName = 'unknown';
+                                if (param.children.variableDeclaratorId[0].children.Identifier) {
+                                    paramName = param.children.variableDeclaratorId[0].children.Identifier[0].image;
+                                }
+                                parameters.push(new projectClasses.Parameter(paramName, paramType));
+                            }
+                        }
+                    }
+                }
+                //interfaces can't have private methods
+                clazz.addMethod(new projectClasses.Method(methodName, returnType, parameters, false));
             }
         }
         classes.push(clazz);
