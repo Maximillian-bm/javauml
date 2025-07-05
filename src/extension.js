@@ -1,7 +1,8 @@
 // filepath: /vscode-extension-app/vscode-extension-app/src/extension.js
 const vscode = require('vscode');
 const settings = require('./settings');
-const readWrite = require('./parsingJava')
+const javaParser = require('./parsingJava');
+const  umlParser = require('./parsingUML');
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -185,15 +186,22 @@ class ViewProvider {
 				vscode.window.showInformationMessage('Creating UML diagrams...');
 				const userSettings = settings.getSettings();
 				if (userSettings) {
-					const project = readWrite.readSourceFolder(userSettings.sourceFolder);
+					const project = javaParser.readSourceFolder(userSettings.sourceFolder);
 					const uml = project.toUML();
-					readWrite.writeUMLToFile(uml, userSettings.outputLocation);
+					javaParser.writeUMLToFile(uml, userSettings.outputLocation);
         		} else {
             		vscode.window.showInformationMessage('No settings found.');
         		}
 			}
 			if (message.command === 'createJava') {
-				vscode.window.showInformationMessage('Creating Java project...');				
+				vscode.window.showInformationMessage('Creating Java project...');
+				const userSettings = settings.getSettings();
+				if (userSettings) {
+					const project = umlParser.readUMLfile(userSettings.outputLocation);
+					console.log(project);
+        		} else {
+            		vscode.window.showInformationMessage('No settings found.');
+        		}
 			}
     	});
 	}
