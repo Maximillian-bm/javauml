@@ -1,9 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const projectClasses = require('./project')
+const javaParser = require('./parsingJava');
 
 function readUMLfile(folder) {
     const filePath = path.join(folder, 'diagram.puml');
+    if(!fs.existsSync(filePath)){
+        return null;
+    }
     const uml = fs.readFileSync(filePath, 'utf8');
     const lines = uml.split('\n');
     const currentLine = [0];
@@ -171,7 +175,49 @@ function writeClassToJava(clazz, currentPath){
 
     const javaFile = path.join(currentPath, fileName);
 
-    fs.writeFileSync(javaFile, clazz.toJava().join('\n'), 'utf8');
+    if(fs.existsSync(javaFile)){
+        const classesInFile = javaParser.getClassesInFile(javaFile);
+        const fieldsAndMethodsAsJava = []
+        if(classesInFile.length != 1){
+            return;
+        }
+        for(const field of clazz.fields){
+            if(!classesInFile[0].fields.some(obj => obj.name === field.name)){
+                field.toJava(fieldsAndMethodsAsJava);
+            }
+        }
+        for(const method of clazz.methods){
+            if(!classesInFile[0].methods.some(obj => obj.name === method.name)){
+                method.toJava(fieldsAndMethodsAsJava);
+            }
+        }
+
+        const javaFileString = fs.readFileSync(javaFile, 'utf8');
+        const javaFileLines = javaFileString.split('\n');
+        var currentLine = 0;
+        while(currentLine < javaFileLines.length && !javaFileLines[currentLine].includes(clazz.name)){
+            currentLine++;
+        }
+        currentLine++;
+        var countedSemiColins = 0;
+        while(currentLine < javaFileLines.length && countedSemiColins < classesInFile[0].fields.length){
+            if(javaFileLines[currentLine].includes(';')){
+                countedSemiColins++;
+            }
+            currentLine++;
+        }
+
+        const merged = [
+            ...javaFileLines.slice(0, currentLine),
+            ...fieldsAndMethodsAsJava,
+            ...javaFileLines.slice(currentLine)
+        ];
+
+        fs.writeFileSync(javaFile, merged.join('\n'), 'utf8');
+    }else{
+        fs.writeFileSync(javaFile, clazz.toJava().join('\n'), 'utf8');
+    }
+
 }
 
 module.exports = {

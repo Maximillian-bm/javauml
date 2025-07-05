@@ -444,5 +444,6 @@ function writeUMLToFile(uml, outputLocation){
 
 module.exports = {
     readSourceFolder,
-    writeUMLToFile
+    writeUMLToFile,
+    getClassesInFile
 };
