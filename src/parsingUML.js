@@ -44,13 +44,44 @@ function createPackage(lines, currentLine){
 }
 
 function createClass(lines, currentLine){
-    const parts = lines[currentLine[0]].split(' ');
-    const name = parts[1];
-    const isAbstract = parts.includes('abstract');
-    const isInterface = parts.includes('interface');
-    const isEnum = parts.includes('enum');
-    const clazz = new projectClasses.Class(name, [], [], null, [], [], isAbstract, isInterface, isEnum);
+    const line = lines[currentLine[0]].trim();
+    // Regex to match class/interface/enum/abstract definitions
+    const classRegex = /^(abstract\s+)?(class|interface|enum)?\s*([A-Za-z0-9_]+)?(?:\s+extends\s+([A-Za-z0-9_]+))?(?:\s+implements\s+([A-Za-z0-9_,\s]+))?\s*\{/;
+    const match = line.match(classRegex);
+
+    let name = null;
+    let isAbstract = false;
+    let isInterface = false;
+    let isEnum = false;
+    let superclass = null;
+    let implementedInterfaces = [];
+
+    if (match) {
+        isAbstract = !!match[1];
+        const type = match[2];
+        if (type === 'interface') isInterface = true;
+        if (type === 'enum') isEnum = true;
+        name = match[3] || null;
+        superclass = match[4] || null;
+        if (match[5]) {
+            implementedInterfaces = match[5].split(',').map(s => s.trim()).filter(Boolean);
+        }
+    }
+
+    const clazz = new projectClasses.Class(
+        name,
+        [], //fields
+        [], //methods
+        superclass,
+        implementedInterfaces,
+        [], //contained objects
+        isAbstract,
+        isInterface,
+        isEnum
+    );
+    currentLine[0]++;
     while(!lines[currentLine[0]].includes('}')){
+        //TODO: find fields and methods
         currentLine[0]++;
     }
     currentLine[0]++;
