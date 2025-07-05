@@ -5,8 +5,8 @@ const projectClasses = require('./project')
 function readUMLfile(folder) {
     const filePath = path.join(folder, 'diagram.puml');
     const uml = fs.readFileSync(filePath, 'utf8');
-    const lines = uml.split('/n');
-    var currentLine = 0;
+    const lines = uml.split('\n');
+    const currentLine = [0];
     const project = new projectClasses.Project();
     while(currentLine < lines.length){
         if(isClass(lines, currentLine)){
@@ -14,25 +14,26 @@ function readUMLfile(folder) {
         }else if(isPackage(lines, currentLine)){
             project.addPackage(createPackage(lines, currentLine));
         }else{
-            currentLine++;
+            currentLine[0]++;
         }
     }
     return project
 }
 
 function readClassesAndPackages(lines, currentLine){
+    currentLine[0]++;
     const classes = [];
     const packages = [];
-    while(!lines[currentLine].include('}')){
+    while(!lines[currentLine[0]].includes('}')){
         if(isClass(lines, currentLine)){
             classes.push(createClass(lines, currentLine));
         }else if(isPackage(lines, currentLine)){
             packages.push(createPackage(lines, currentLine));
         }else{
-            currentLine++;
+            currentLine[0]++;
         }
     }
-    currentLine++;
+    currentLine[0]++;
     return [packages, classes];
 }
 
@@ -43,22 +44,22 @@ function createPackage(lines, currentLine){
 }
 
 function createClass(lines, currentLine){
-    const parts = lines[currentLine].split(' ');
+    const parts = lines[currentLine[0]].split(' ');
     const name = parts[1];
-    const isAbstract = parts.include('abstract');
-    const isInterface = parts.include('interface');
-    const isEnum = parts.include('enum');
+    const isAbstract = parts.includes('abstract');
+    const isInterface = parts.includes('interface');
+    const isEnum = parts.includes('enum');
     const clazz = new projectClasses.Class(name, [], [], null, [], [], isAbstract, isInterface, isEnum);
-    while(!lines[currentLine].include('}')){
-        currentLine++;
+    while(!lines[currentLine[0]].includes('}')){
+        currentLine[0]++;
     }
-    currentLine++;
+    currentLine[0]++;
     return clazz;
 }
 
 function isClass(lines, currentLine){
-    const parts = lines[currentLine].split(' ');
-    if(parts.include('class') || parts.include('abstract') || parts.include('interface') || parts.include('enum')){
+    const parts = lines[currentLine[0]].split(' ');
+    if(parts.includes('class') || parts.includes('abstract') || parts.includes('interface') || parts.includes('enum')){
         return true;
     }else{
         return false;
@@ -66,10 +67,14 @@ function isClass(lines, currentLine){
 }
 
 function isPackage(lines, currentLine){
-    const parts = lines[currentLine].split(' ');
-    if(parts.include('package')){
+    const parts = lines[currentLine[0]].split(' ');
+    if(parts.includes('package')){
         return true;
     }else{
         return false;
     }
 }
+
+module.exports = {
+    readUMLfile
+};
