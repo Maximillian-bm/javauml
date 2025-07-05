@@ -75,11 +75,51 @@ function createClass(lines, currentLine){
     const clazz = new projectClasses.Class(name, [], [], superclass, implementedInterfaces, [], isAbstract, isInterface, isEnum);
     currentLine[0]++;
     while(!lines[currentLine[0]].includes('}')){
-        //TODO: find fields and methods
+        const bodyLine = lines[currentLine[0]].trim();
+        if(isField(bodyLine)){
+            const fieldRegex = /^([+-])?\s*([A-Za-z0-9_]+)\s*:\s*([A-Za-z0-9_<>]+)$/;
+            const match = bodyLine.match(fieldRegex);
+            if (match) {
+                const name = match[2];
+                const type = match[3];
+                const isPrivate = match[1] === '-' ? true : false;
+                const field = new projectClasses.Field(name, type, isPrivate);
+                clazz.addField(field);
+            }
+        }else if(isMethod(bodyLine)){
+            const methodRegex = /^([+-])?\s*([A-Za-z0-9_]+)\s*\(([^)]*)\)\s*:\s*([A-Za-z0-9_<>]+)$/;
+            const match = bodyLine.match(methodRegex);
+            if (match) {
+                const name = match[2];
+                const returnType = match[4];
+                const isPrivate = match[1] === '-' ? true : false;
+                const paramsString = match[3].trim();
+                let parameters = [];
+                if (paramsString.length > 0) {
+                    parameters = paramsString.split(',').map(param => {
+                        const paramMatch = param.trim().match(/^([A-Za-z0-9_]+)\s*:\s*([A-Za-z0-9_<>]+)$/);
+                        if (paramMatch) {
+                            return new projectClasses.Parameter(paramMatch[1], paramMatch[2]);
+                        }
+                        return null;
+                    }).filter(Boolean);
+                }
+                const method = new projectClasses.Method(name, returnType, parameters, isPrivate);
+                clazz.addMethod(method);
+            }
+        }
         currentLine[0]++;
     }
     currentLine[0]++;
     return clazz;
+}
+
+function isField(line){
+    return /^([+-])?\s*[A-Za-z0-9_]+\s*:\s*[A-Za-z0-9_<>]+$/.test(line);
+}
+
+function isMethod(line){
+    return /^([+-])?\s*[A-Za-z0-9_]+\s*\([^)]*\)\s*:\s*[A-Za-z0-9_<>]+$/.test(line);
 }
 
 function isClass(lines, currentLine){
