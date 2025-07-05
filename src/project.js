@@ -165,7 +165,11 @@ class Class {
 
         lines.push(firstLine);
 
-        //TOD: fields and methods
+        for(const field of this.fields){
+            field.toJava(lines);
+        }
+
+        //TOD: methods
 
         const lastLine = '}';
 
@@ -211,6 +215,14 @@ class Field {
         this.name = name;
         this.type = type;
         this.isPrivate = isPrivate;
+    }
+    toJava(lines){
+        var line = '    public ';
+        if(this.isPrivate){
+            line = '    private ';
+        }
+        line += this.type + ' ' + this.name + ';';
+        lines.push(line);
     }
 }
 
