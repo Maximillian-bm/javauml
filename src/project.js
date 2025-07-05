@@ -253,6 +253,9 @@ class Method {
         line += ') {'
         lines.push(line);
         lines.push('        //TODO');
+        if(this.returnType.valueOf() != 'void'.valueOf()){
+            lines.push('        return null;');
+        }
         lines.push('    }');
     }
 }
