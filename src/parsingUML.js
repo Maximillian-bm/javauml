@@ -38,14 +38,18 @@ function readClassesAndPackages(lines, currentLine){
 }
 
 function createPackage(lines, currentLine){
-    const name = 'todo';
+    const line = lines[currentLine[0]].trim().split(' ');
+    var temp = line[1];
+    temp = temp.replace('"', '');
+    temp = temp.replace('"', '');
+    const name = temp;
     const packageBody = readClassesAndPackages(lines, currentLine);
     return new projectClasses.Package(name, packageBody[1], packageBody[0]);
 }
 
 function createClass(lines, currentLine){
     const line = lines[currentLine[0]].trim();
-    // Regex to match class/interface/enum/abstract definitions
+    //regex to match class/interface/enum/abstract definitions
     const classRegex = /^(abstract\s+)?(class|interface|enum)?\s*([A-Za-z0-9_]+)?(?:\s+extends\s+([A-Za-z0-9_]+))?(?:\s+implements\s+([A-Za-z0-9_,\s]+))?\s*\{/;
     const match = line.match(classRegex);
 
@@ -68,17 +72,7 @@ function createClass(lines, currentLine){
         }
     }
 
-    const clazz = new projectClasses.Class(
-        name,
-        [], //fields
-        [], //methods
-        superclass,
-        implementedInterfaces,
-        [], //contained objects
-        isAbstract,
-        isInterface,
-        isEnum
-    );
+    const clazz = new projectClasses.Class(name, [], [], superclass, implementedInterfaces, [], isAbstract, isInterface, isEnum);
     currentLine[0]++;
     while(!lines[currentLine[0]].includes('}')){
         //TODO: find fields and methods
