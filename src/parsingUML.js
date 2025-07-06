@@ -111,11 +111,17 @@ function createClass(lines, currentLine){
                 const method = new projectClasses.Method(name, returnType, parameters, isPrivate);
                 clazz.addMethod(method);
             }
+        }else if(isEnumType(bodyLine)){
+            clazz.addEnumType(bodyLine);
         }
         currentLine[0]++;
     }
     currentLine[0]++;
     return clazz;
+}
+
+function isEnumType(line){
+    return (!isField(line) && !isMethod(line) && line.length != 0);
 }
 
 function isField(line){

@@ -107,12 +107,17 @@ class Class {
         this.name = name;
         this.methods = methods || [];
         this.fields = fields || [];
+        this.enumTypes = [];
         this.superclass = superclass || null;
         this.implementedInterfaces = implementedInterfaces || [];
         this.containedClasses = containedClasses || [];
         this.isAbstract = isAbstract;
         this.isInterface = isInterface;
         this.isEnum = isEnum;
+    }
+
+    addEnumType(enumType){
+        this.enumTypes.push(enumType);
     }
 
     addMethod(method) {
@@ -165,13 +170,29 @@ class Class {
 
         lines.push(firstLine);
         lines.push(' ');
-        
+
+        for(const enumType of this.enumTypes){
+            if(enumType == this.enumTypes[this.enumTypes.length-1]){
+                lines.push('    ' + enumType + '();');
+                lines.push('');
+            }else{
+                lines.push('    ' + enumType + '(),');
+            }
+        }
+
         for(const field of this.fields){
             field.toJava(lines);
         }
 
+        if(this.isEnum){
+            lines.push('');
+            lines.push('    ' + this.name + '() {');
+            lines.push('        //TODO');
+            lines.push('    }');
+        }
+
         for(const method of this.methods){
-            method.toJava(lines);
+            method.toJava(lines, this.isInterface);
         }
 
         const lastLine = '}';
@@ -200,6 +221,9 @@ class Class {
         }
         uml.push(`${indent}${classDef} {`);
         const innerIndent = ' '.repeat((depth + 1) * 2);
+        for(const enumType of this.enumTypes){
+            uml.push(`${innerIndent}  ${enumType}`);
+        }
         for (const field of this.fields) {
             const visibility = field.isPrivate ? '-' : '+';
             uml.push(`${innerIndent}  ${visibility} ${field.name}: ${field.type}`);
@@ -237,7 +261,7 @@ class Method {
         this.isPrivate = isPrivate;
     }
 
-    toJava(lines){
+    toJava(lines, isAbstract){
         lines.push('');
         var line = '    public ';
         if(this.isPrivate){
@@ -252,13 +276,18 @@ class Method {
                 }
             }
         }
-        line += ') {'
-        lines.push(line);
-        lines.push('        //TODO');
-        if(this.returnType.valueOf() != 'void'.valueOf()){
-            lines.push('        return null;');
+        if(isAbstract){
+            line += ');';
+            lines.push(line);
+        }else{
+            line += ') {'
+            lines.push(line);
+            lines.push('        //TODO');
+            if(this.returnType.valueOf() != 'void'.valueOf()){
+                lines.push('        return null;');
+            }
+            lines.push('    }');
         }
-        lines.push('    }');
     }
 }
 
