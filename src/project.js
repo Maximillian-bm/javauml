@@ -192,7 +192,7 @@ class Class {
         }
 
         for(const method of this.methods){
-            method.toJava(lines);
+            method.toJava(lines, this.isInterface);
         }
 
         const lastLine = '}';
@@ -261,7 +261,7 @@ class Method {
         this.isPrivate = isPrivate;
     }
 
-    toJava(lines){
+    toJava(lines, isAbstract){
         lines.push('');
         var line = '    public ';
         if(this.isPrivate){
@@ -276,13 +276,18 @@ class Method {
                 }
             }
         }
-        line += ') {'
-        lines.push(line);
-        lines.push('        //TODO');
-        if(this.returnType.valueOf() != 'void'.valueOf()){
-            lines.push('        return null;');
+        if(isAbstract){
+            line += ');';
+            lines.push(line);
+        }else{
+            line += ') {'
+            lines.push(line);
+            lines.push('        //TODO');
+            if(this.returnType.valueOf() != 'void'.valueOf()){
+                lines.push('        return null;');
+            }
+            lines.push('    }');
         }
-        lines.push('    }');
     }
 }
 
