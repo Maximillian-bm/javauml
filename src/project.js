@@ -172,11 +172,23 @@ class Class {
         lines.push(' ');
 
         for(const enumType of this.enumTypes){
-            lines.push('    ' + enumType + '();');
+            if(enumType == this.enumTypes[this.enumTypes.length-1]){
+                lines.push('    ' + enumType + '();');
+                lines.push('');
+            }else{
+                lines.push('    ' + enumType + '(),');
+            }
         }
-        
+
         for(const field of this.fields){
             field.toJava(lines);
+        }
+
+        if(this.isEnum){
+            lines.push('');
+            lines.push('    ' + this.name + '() {');
+            lines.push('        //TODO');
+            lines.push('    }');
         }
 
         for(const method of this.methods){
