@@ -279,6 +279,21 @@ function getClassesInFile(filePath) {
             }
         }
         const clazz = new projectClasses.Class(name, [], [], superclass, implementedInterfaces, [], isAbstract, isInterface, isEnum);
+        if (isEnum && classDecl.children.enumBody) {
+            const enumBody = classDecl.children.enumBody[0];
+            if (
+                enumBody.children.enumConstantList &&
+                enumBody.children.enumConstantList[0].children.enumConstant
+            ) {
+                const constants = enumBody.children.enumConstantList[0].children.enumConstant;
+                for (const constant of constants) {
+                    if (constant.children.Identifier) {
+                        const enumName = constant.children.Identifier[0].image;
+                        clazz.addEnumType(enumName);
+                    }
+                }
+            }
+        }
         //find classBody
         let classBody = null;
         if (
