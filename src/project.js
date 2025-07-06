@@ -107,12 +107,17 @@ class Class {
         this.name = name;
         this.methods = methods || [];
         this.fields = fields || [];
+        this.enumTypes = [];
         this.superclass = superclass || null;
         this.implementedInterfaces = implementedInterfaces || [];
         this.containedClasses = containedClasses || [];
         this.isAbstract = isAbstract;
         this.isInterface = isInterface;
         this.isEnum = isEnum;
+    }
+
+    addEnumType(enumType){
+        this.enumTypes.push(enumType);
     }
 
     addMethod(method) {
@@ -165,6 +170,10 @@ class Class {
 
         lines.push(firstLine);
         lines.push(' ');
+
+        for(const enumType of this.enumTypes){
+            lines.push('    ' + enumType + '();');
+        }
         
         for(const field of this.fields){
             field.toJava(lines);
