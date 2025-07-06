@@ -209,6 +209,9 @@ class Class {
         }
         uml.push(`${indent}${classDef} {`);
         const innerIndent = ' '.repeat((depth + 1) * 2);
+        for(const enumType of this.enumTypes){
+            uml.push(`${innerIndent}  ${enumType}`);
+        }
         for (const field of this.fields) {
             const visibility = field.isPrivate ? '-' : '+';
             uml.push(`${innerIndent}  ${visibility} ${field.name}: ${field.type}`);
