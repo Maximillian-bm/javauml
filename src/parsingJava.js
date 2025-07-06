@@ -194,12 +194,15 @@ function getClassesInFile(filePath) {
         let name = 'Unknown';
         let classDecl = null;
         //check for enum
-        if (typeDecl.children && typeDecl.children.enumDeclaration) {
+        if (
+            typeDecl.children &&
+            typeDecl.children.classDeclaration &&
+            typeDecl.children.classDeclaration[0].children.enumDeclaration
+        ) {
             isEnum = true;
-            classDecl = typeDecl.children.enumDeclaration[0];
-            //enum name
-            if (classDecl.children.Identifier) {
-                name = classDecl.children.Identifier[0].image;
+            classDecl = typeDecl.children.classDeclaration[0].children.enumDeclaration[0];
+            if (classDecl.children.typeIdentifier && classDecl.children.typeIdentifier[0].children.Identifier) {
+                name = classDecl.children.typeIdentifier[0].children.Identifier[0].image;
             }
         } else if (typeDecl.children && typeDecl.children.interfaceDeclaration) {
             isInterface = true;
@@ -291,6 +294,19 @@ function getClassesInFile(filePath) {
             classDecl.children.normalInterfaceDeclaration[0].children.interfaceBody
         ) {
             classBody = classDecl.children.normalInterfaceDeclaration[0].children.interfaceBody[0];
+        }
+        //handle enumBody
+        if (
+            isEnum &&
+            classDecl.children.enumBody &&
+            classDecl.children.enumBody[0].children.enumBodyDeclarations &&
+            classDecl.children.enumBody[0].children.enumBodyDeclarations[0].children.classBodyDeclaration
+        ) {
+            classBody = {
+                children: {
+                    classBodyDeclaration: classDecl.children.enumBody[0].children.enumBodyDeclarations[0].children.classBodyDeclaration
+                }
+            };
         }
         if (classBody && classBody.children.classBodyDeclaration) {
             const bodyDecls = classBody.children.classBodyDeclaration;
