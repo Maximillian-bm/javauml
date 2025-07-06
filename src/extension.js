@@ -1,7 +1,8 @@
 // filepath: /vscode-extension-app/vscode-extension-app/src/extension.js
 const vscode = require('vscode');
 const settings = require('./settings');
-const readWrite = require('./readwrite')
+const javaParser = require('./parsingJava');
+const  umlParser = require('./parsingUML');
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -21,7 +22,7 @@ class ViewProvider {
         	enableScripts: true
     	};
 
-    	webviewView.webview.html = `
+    	webviewView.webview.html = /*html*/`
         	<html lang="en">
 			<head>
 				<meta charset="UTF-8">
@@ -96,13 +97,13 @@ class ViewProvider {
 						<button type="button" id="browseSource">Browse</button>
 					</div>
 					<div class="row">
-						<label for="outputLocation">Output Folder:</label>
+						<label for="outputLocation">Diagram Folder:</label>
 						<input type="text" id="outputLocation" value="${outputLocation}">
 						<button type="button" id="browseOutput">Browse</button>
 					</div>
 					<div class="actions">
-						<button type="button" id="saveBtn">💾 Save</button>
-						<button type="button" id="createBtn">📄 Create UML</button>
+						<button type="button" id="createUmlBtn">📄 Create UML</button>
+						<button type="button" id="createJavaBtn">📁 Create Java</button>
 					</div>
 				</form>
 				<div id="msg"></div>
@@ -110,18 +111,12 @@ class ViewProvider {
 				<script>
 					const vscode = acquireVsCodeApi();
 
-					document.getElementById('saveBtn').addEventListener('click', () => {
-						const sourceFolder = document.getElementById('sourceFolder').value;
-						const outputLocation = document.getElementById('outputLocation').value;
-						vscode.postMessage({
-							command: 'saveSettings',
-							sourceFolder,
-							outputLocation
-						});
+					document.getElementById('createUmlBtn').addEventListener('click', () => {
+						vscode.postMessage({ command: 'createUML' });
 					});
 
-					document.getElementById('createBtn').addEventListener('click', () => {
-						vscode.postMessage({ command: 'createUML' });
+					document.getElementById('createJavaBtn').addEventListener('click', () => {
+						vscode.postMessage({ command: 'createJava' });
 					});
 
 					document.getElementById('browseSource').addEventListener('click', () => {
@@ -133,17 +128,29 @@ class ViewProvider {
 					});
 
 					window.addEventListener('message', event => {
-						const message = event.data;
-						if (message.command === 'setSourceFolder') {
-							document.getElementById('sourceFolder').value = message.path;
-						}
-						if (message.command === 'setOutputFolder') {
-							document.getElementById('outputLocation').value = message.path;
-						}
-						if (message.command === 'showMsg') {
-							document.getElementById('msg').textContent = message.text;
-						}
-					});
+					const message = event.data;
+					if (message.command === 'setSourceFolder') {
+						document.getElementById('sourceFolder').value = message.path;
+						autoSave();
+					}
+					if (message.command === 'setOutputFolder') {
+						document.getElementById('outputLocation').value = message.path;
+						autoSave();
+					}
+					if (message.command === 'showMsg') {
+						document.getElementById('msg').textContent = message.text;
+					}
+
+					function autoSave() {
+						const sourceFolder = document.getElementById('sourceFolder').value;
+						const outputLocation = document.getElementById('outputLocation').value;
+						vscode.postMessage({
+							command: 'saveSettings',
+							sourceFolder,
+							outputLocation
+						});
+					}
+				});
 				</script>
 			</body>
 			</html>
@@ -180,9 +187,23 @@ class ViewProvider {
 				vscode.window.showInformationMessage('Creating UML diagrams...');
 				const userSettings = settings.getSettings();
 				if (userSettings) {
-					const project = readWrite.readSourceFolder(userSettings.sourceFolder);
+					const project = javaParser.readSourceFolder(userSettings.sourceFolder);
 					const uml = project.toUML();
-					readWrite.writeUMLToFile(uml, userSettings.outputLocation);
+					javaParser.writeUMLToFile(uml, userSettings.outputLocation);
+        		} else {
+            		vscode.window.showInformationMessage('No settings found.');
+        		}
+			}
+			if (message.command === 'createJava') {
+				vscode.window.showInformationMessage('Creating Java project...');
+				const userSettings = settings.getSettings();
+				if (userSettings) {
+					const project = umlParser.readUMLfile(userSettings.outputLocation);
+					if(project == null){
+						vscode.window.showErrorMessage('No diagram found, make sure to name it diagram.puml');
+					}else{
+						umlParser.writeProjectToJava(project, userSettings.sourceFolder);
+					}
         		} else {
             		vscode.window.showInformationMessage('No settings found.');
         		}
