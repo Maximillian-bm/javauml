@@ -97,30 +97,19 @@ class ViewProvider {
 						<button type="button" id="browseSource">Browse</button>
 					</div>
 					<div class="row">
-						<label for="outputLocation">Output Folder:</label>
+						<label for="outputLocation">Diagram Folder:</label>
 						<input type="text" id="outputLocation" value="${outputLocation}">
 						<button type="button" id="browseOutput">Browse</button>
 					</div>
 					<div class="actions">
-						<button type="button" id="saveBtn">💾 Save</button>
 						<button type="button" id="createUmlBtn">📄 Create UML</button>
-						<button type="button" id="createJavaBtn">📄 Create Java</button>
+						<button type="button" id="createJavaBtn">📁 Create Java</button>
 					</div>
 				</form>
 				<div id="msg"></div>
 
 				<script>
 					const vscode = acquireVsCodeApi();
-
-					document.getElementById('saveBtn').addEventListener('click', () => {
-						const sourceFolder = document.getElementById('sourceFolder').value;
-						const outputLocation = document.getElementById('outputLocation').value;
-						vscode.postMessage({
-							command: 'saveSettings',
-							sourceFolder,
-							outputLocation
-						});
-					});
 
 					document.getElementById('createUmlBtn').addEventListener('click', () => {
 						vscode.postMessage({ command: 'createUML' });
@@ -139,17 +128,29 @@ class ViewProvider {
 					});
 
 					window.addEventListener('message', event => {
-						const message = event.data;
-						if (message.command === 'setSourceFolder') {
-							document.getElementById('sourceFolder').value = message.path;
-						}
-						if (message.command === 'setOutputFolder') {
-							document.getElementById('outputLocation').value = message.path;
-						}
-						if (message.command === 'showMsg') {
-							document.getElementById('msg').textContent = message.text;
-						}
-					});
+					const message = event.data;
+					if (message.command === 'setSourceFolder') {
+						document.getElementById('sourceFolder').value = message.path;
+						autoSave();
+					}
+					if (message.command === 'setOutputFolder') {
+						document.getElementById('outputLocation').value = message.path;
+						autoSave();
+					}
+					if (message.command === 'showMsg') {
+						document.getElementById('msg').textContent = message.text;
+					}
+
+					function autoSave() {
+						const sourceFolder = document.getElementById('sourceFolder').value;
+						const outputLocation = document.getElementById('outputLocation').value;
+						vscode.postMessage({
+							command: 'saveSettings',
+							sourceFolder,
+							outputLocation
+						});
+					}
+				});
 				</script>
 			</body>
 			</html>
