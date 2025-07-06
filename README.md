@@ -1,12 +1,21 @@
 # javauml README
 
-This is version 1 of my javaUML extention
+This is the second release of the javaUML extention
 
 ## Features
 ### 1
 Save settings for extention uniqly for each project
+![UI](./images/UI.png)
 ### 2
 Convert Java project into plantUML class diagram
+![plantUML File](./images/plantUMLfile.png)
+![Class Diagram](./images/diagram.png)
+### 3 
+Convert plantUML file into a Java project
+![Java File](./images/JavaFile.png)
+### 4
+Add classes or method and fields to existing classes in the plantUML file then those will be added to the Java project without deleting existing code
+![Updated Java](./images/updatedJavaFile.png)
 
 ## How to use
 ### Step 1
@@ -20,16 +29,8 @@ Select the source folder of your project
 ### Step 5
 Select the output folder (where ever you want your plantUML file to be created)
 ### Step 6
-REMEMBER TO SAVE THE LOCATIONS
-### Step 7
-Create your class diagram and save a whole lot of time
+Create diagrams and java project
 
 ## Comming features
 ### 1
-Convert plantUML file into a java project
-### 2
-Update plantUML file when code changes
-### 3
-Update code when plantUML file changes
-### 4
 Select and deselect difrent features such as contains arrows
